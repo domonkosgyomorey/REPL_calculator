@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-use std::fs::File;
 use std::io::prelude::*;
 
 
@@ -10,6 +9,12 @@ enum TOKEN {
     LPAREN,
     RPAREN,
     NUMBER(u32)
+}
+
+enum COMMAND {
+    QUIT,
+    HELP,
+    EVAL
 }
 
 fn parse_token(c: char) -> Result<TOKEN, &'static str>{
@@ -28,7 +33,7 @@ fn parse_token(c: char) -> Result<TOKEN, &'static str>{
     }
 }
 
-fn clean_input(input: &str) -> Result<Vec<TOKEN>, Vec<String>> {
+fn clean_input(input:String) -> Result<Vec<TOKEN>, Vec<String>> {
     let mut tokens: Vec<TOKEN> = Vec::new();
     let mut errors: Vec<String> = Vec::new();
     for c in input.chars() {
@@ -115,13 +120,13 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<u32, &'static str> {
         unsafe { LOG.push(format!("In A loop {:?} at {}", tokens[i], i)); }
         match tokens[i] {
             TOKEN::PLUS => {
-                let mut left;
+                let left;
                 match prev_token {
                     Some(TOKEN::NUMBER(p)) => {
                         left = p;
                     },
-                    None => { return Err("left argument is missing at a plus sign"); },
-                    _ => { return Err("left argument is wrong at a plus sign"); }
+                    None => { return Err("left argument is missing at an addition"); },
+                    _ => { return Err("left argument is wrong at an addition"); }
                 }
                 if i+1 < tokens.len() {
                     if let TOKEN::NUMBER(d) = tokens[i+1] {
@@ -132,10 +137,37 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<u32, &'static str> {
                         // because end of the loop we increase i and we are on i-1
                         i -= 1;
                     }else{
-                        return Err("right argument is missing at a plus sign");
+                        return Err("right argument is missing at an addition");
                     }
                 }else{
-                    return Err("right argument is missing at a plus sign");
+                    return Err("right argument is missing at an addition");
+                }
+            },
+            TOKEN::MINUS => {
+                let left;
+                match prev_token {
+                    Some(TOKEN::NUMBER(p)) => {
+                        left = p;
+                    },
+                    None => { return Err("left argument is missing at a substraction"); },
+                    _ => { return Err("left argument is wrong at a substraction"); }
+                }
+                if i+1 < tokens.len() {
+                    if let TOKEN::NUMBER(d) = tokens[i+1] {
+                        if d > left {
+                            return Err("Negative numbers not supported");
+                        }
+                        tokens[i-1] = TOKEN::NUMBER(left-d);
+                        tokens.remove(i+1);
+                        tokens.remove(i);
+
+                        // because end of the loop we increase i and we are on i-1
+                        i -= 1;
+                    }else{
+                        return Err("right argument is missing at a substraction");
+                    }
+                }else{
+                    return Err("right argument is missing at a substraction");
                 }
             },
             _ => {}
@@ -158,24 +190,50 @@ fn get_line() -> String {
     }
 }
 
+fn get_command(input: &str) -> COMMAND {
+    let cmd = input.to_lowercase();
+    if cmd=="quit" || cmd=="q" { return COMMAND::QUIT; }
+    if cmd=="help" || cmd=="h" { return COMMAND::HELP; }
+    return COMMAND::EVAL;
+}
+
+fn eval(input: String){
+    match clean_input(input) {
+        Ok(xs) => match eval_tokens(xs) {
+            Ok(res) => println!("=> {}", res),
+            Err(msg) => println!("\x1b[1;31mError: {}\x1b[0m", msg)
+        },
+        Err(errors) => {
+            for error in errors.iter() {
+                println!("\x1b[1;31mError: {}\x1b[0m", error);
+            }
+        }
+    }
+}
+
+fn print_help(){
+    println!("========= HELP =========");
+    println!("commands: \x1b[1;36m(quit, q)\x1b[0m");
+    println!("evaluation:");
+    println!("\x1b[1;36m\t((1)+11-3)\x1b[0m");
+    println!("\x1b[1;32m\t=> 9\x1b[0m")
+}
+
 static mut LOG:Vec<String> = Vec::new(); 
 
 fn main() -> std::io::Result<()>{
     loop {
-        let input: String = get_line();
-        match clean_input(input.trim()) {
-            Ok(xs) => match eval_tokens(xs) {
-                Ok(res) => println!("=> {}", res),
-                Err(msg) => println!("\x1b[1;31mError: {}\x1b[0m", msg)
-            },
-            Err(errors) => {
-                for error in errors.iter() {
-                    println!("\x1b[1;31mError: {}\x1b[0m", error);
-                }
-            }
+
+        print!("$ ");
+        std::io::stdout().flush().unwrap();
+        let input: String = get_line().trim().to_string();
+        match get_command(&input) {
+            COMMAND::EVAL => eval(input),
+            COMMAND::HELP => print_help(),
+            COMMAND::QUIT => { break; }
         }
 
-        let mut fp = std::fs::OpenOptions::new().write(true).open("./log.txt")?;
+        let mut fp = std::fs::OpenOptions::new().write(true).truncate(true).open("log.txt")?;
         unsafe {
             for line in LOG.iter() {
                 fp.write(line.as_bytes())?;
@@ -183,4 +241,5 @@ fn main() -> std::io::Result<()>{
             }
         }
     }
+    Ok(())
 }
