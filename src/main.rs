@@ -28,12 +28,21 @@ fn parse_token(c: char) -> Result<TOKEN, &'static str>{
     }
 }
 
-fn clean_input(input: &str) -> Vec<TOKEN> {
-    let mut tokens: Vec<TOKEN> = input.chars().filter(|&c| c!=' ').map(|c|
-        match parse_token(c) {
-            Ok(t) => t,
-            Err(e) => panic!("{}: {}", c, e)
-        }).collect();
+fn clean_input(input: &str) -> Result<Vec<TOKEN>, Vec<String>> {
+    let mut tokens: Vec<TOKEN> = Vec::new();
+    let mut errors: Vec<String> = Vec::new();
+    for c in input.chars() {
+        if c!=' ' {
+            match parse_token(c) {
+                Ok(t) => tokens.push(t),
+                Err(e) => errors.push(format!("{}: {}", c, e))    
+            }
+        }
+    }
+
+    if errors.len() > 0 {
+        return Err(errors);
+    }
 
     let mut i = 0;
     while i < tokens.len() {
@@ -53,10 +62,10 @@ fn clean_input(input: &str) -> Vec<TOKEN> {
         }
         i+=1;
     }
-    return tokens
+    return Ok(tokens)
 }
 
-fn eval_tokens(mut tokens :Vec<TOKEN>) -> u32 {
+fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<u32, &'static str> {
     unsafe { LOG.push(format!("\nCurrent expr {:?}", tokens)); }
 
     let mut lparen_idxs:VecDeque<u32> = VecDeque::new();
@@ -70,14 +79,17 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> u32 {
             TOKEN::LPAREN => lparen_idxs.push_back(i as u32),
             TOKEN::RPAREN => {
                 if lparen_idxs.is_empty(){
-                    panic!("Wrong paranthesis found");
+                    return Err("Wrong paranthesis found");
                 }else{
                     let idx:u32 = lparen_idxs.pop_back().unwrap()+1;
                     // evaluate inside arithmetic because we found the parenthesis around them
                     let sub_expr:Vec<TOKEN> = tokens.iter().skip(idx as usize).take(i-idx as usize).cloned().collect();
                     unsafe { LOG.push(format!("Sub Expression: {:?}", sub_expr)); }
 
-                    tokens[(idx as usize)-1] = TOKEN::NUMBER(eval_tokens(sub_expr));
+                    match eval_tokens(sub_expr) {
+                        Ok(result) => {tokens[(idx as usize)-1] = TOKEN::NUMBER(result);},
+                        Err(msg) => { return Err(msg); }
+                    }
                     unsafe { LOG.push(format!("Sub Expression Result: {:?}", tokens)); }
 
                     let mut j: usize = i;
@@ -108,8 +120,8 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> u32 {
                     Some(TOKEN::NUMBER(p)) => {
                         left = p;
                     },
-                    None => panic!("left argument is missing at a plus sign"),
-                    _ => panic!("left argument is wrong at a plus sign")
+                    None => { return Err("left argument is missing at a plus sign"); },
+                    _ => { return Err("left argument is wrong at a plus sign"); }
                 }
                 if i+1 < tokens.len() {
                     if let TOKEN::NUMBER(d) = tokens[i+1] {
@@ -120,10 +132,10 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> u32 {
                         // because end of the loop we increase i and we are on i-1
                         i -= 1;
                     }else{
-                        panic!("right argument is missing at a plus sign");
+                        return Err("right argument is missing at a plus sign");
                     }
                 }else{
-                    panic!("right argument is missing at a plus sign");
+                    return Err("right argument is missing at a plus sign");
                 }
             },
             _ => {}
@@ -133,14 +145,13 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> u32 {
     }
     if let TOKEN::NUMBER(d) = tokens[0] {
         unsafe { LOG.push(format!("Result: {:?}", tokens)); }
-        return d;
+        return Ok(d);
     }
     unreachable!()
 }
 
-fn get_line(msg: &str) -> String {
+fn get_line() -> String {
     let mut input = String::new();
-    
     match std::io::stdin().read_line(&mut input) {
         Ok(_) => { input },
         Err(_) => panic!("Cannot read input")
@@ -151,8 +162,19 @@ static mut LOG:Vec<String> = Vec::new();
 
 fn main() -> std::io::Result<()>{
     loop {
-        let input: String = get_line(">");
-        println!("=> {}", eval_tokens(clean_input(input.trim())));
+        let input: String = get_line();
+        match clean_input(input.trim()) {
+            Ok(xs) => match eval_tokens(xs) {
+                Ok(res) => println!("=> {}", res),
+                Err(msg) => println!("\x1b[1;31mError: {}\x1b[0m", msg)
+            },
+            Err(errors) => {
+                for error in errors.iter() {
+                    println!("\x1b[1;31mError: {}\x1b[0m", error);
+                }
+            }
+        }
+
         let mut fp = std::fs::OpenOptions::new().write(true).open("./log.txt")?;
         unsafe {
             for line in LOG.iter() {
