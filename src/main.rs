@@ -28,7 +28,7 @@ fn parse_token(c: char) -> Result<TOKEN, &'static str>{
     }
 }
 
-fn clean_input(input: String) -> Vec<TOKEN> {
+fn clean_input(input: &str) -> Vec<TOKEN> {
     let mut tokens: Vec<TOKEN> = input.chars().filter(|&c| c!=' ').map(|c|
         match parse_token(c) {
             Ok(t) => t,
@@ -138,28 +138,27 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> u32 {
     unreachable!()
 }
 
+fn get_line(msg: &str) -> String {
+    let mut input = String::new();
+    
+    match std::io::stdin().read_line(&mut input) {
+        Ok(_) => { input },
+        Err(_) => panic!("Cannot read input")
+    }
+}
+
 static mut LOG:Vec<String> = Vec::new(); 
 
 fn main() -> std::io::Result<()>{
-    let mut input = String::new();
-
-
-    print!(">");
-
-    println!("{}", input);
-
-    match std::io::stdin().read_line(&mut input) {
-        Ok(_) => println!("{}", eval_tokens(clean_input(input))),
-        Err(_) => panic!("IO error az input")
-    }
-
-
-    let mut fp = File::create_new("log.txt")?;
-    unsafe {
-        for line in LOG.iter() {
-            fp.write(line.as_bytes())?;
-            fp.write("\n".as_bytes())?;
+    loop {
+        let input: String = get_line(">");
+        println!("=> {}", eval_tokens(clean_input(input.trim())));
+        let mut fp = std::fs::OpenOptions::new().write(true).open("./log.txt")?;
+        unsafe {
+            for line in LOG.iter() {
+                fp.write(line.as_bytes())?;
+                fp.write("\n".as_bytes())?;
+            }
         }
     }
-    Ok(())
 }
