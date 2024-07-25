@@ -1,8 +1,8 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
+use lazy_static::lazy_static;
 use std::io::prelude::*;
 
-
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 enum TOKEN {
     PLUS,
     MINUS,
@@ -14,10 +14,11 @@ enum TOKEN {
 enum COMMAND {
     QUIT,
     HELP,
+    EMPTY,
     EVAL
 }
 
-fn parse_token(c: char) -> Result<TOKEN, &'static str>{
+fn parse_token(c: char) -> Result<TOKEN, u32>{
     match c {
         '+' => Ok(TOKEN::PLUS),
         '-' => Ok(TOKEN::MINUS),
@@ -27,11 +28,12 @@ fn parse_token(c: char) -> Result<TOKEN, &'static str>{
             if c.is_digit(10) {
                  Ok(TOKEN::NUMBER(c.to_digit(10).unwrap()))
             } else {
-                 Err("Token not parseable") 
+                 Err(UNKNOWN_TOKEN_ERROR) 
             }
         }
     }
 }
+
 
 fn clean_input(input:String) -> Result<Vec<TOKEN>, Vec<String>> {
     let mut tokens: Vec<TOKEN> = Vec::new();
@@ -40,7 +42,7 @@ fn clean_input(input:String) -> Result<Vec<TOKEN>, Vec<String>> {
         if c!=' ' {
             match parse_token(c) {
                 Ok(t) => tokens.push(t),
-                Err(e) => errors.push(format!("{}: {}", c, e))    
+                Err(e) => errors.push(format!("{}: {}", c, ERROR_MAP[&e]))    
             }
         }
     }
@@ -70,7 +72,42 @@ fn clean_input(input:String) -> Result<Vec<TOKEN>, Vec<String>> {
     return Ok(tokens)
 }
 
-fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<u32, &'static str> {
+
+fn return_numbers_for_bin_op(prev_token: Option<TOKEN>, next_token: TOKEN, operation: TOKEN) -> Result<[u32;2], u32>{
+    let mut result: [u32; 2] = [0, 0];
+    match prev_token {
+        Some(TOKEN::NUMBER(num)) => { result[0] = num; },
+        _ => { return Err(TOKEN_TO_ERROR_OFFSET[&operation]+LEFT_ARG_MISS_ERROR_IDX); }
+    }
+    match next_token {
+        TOKEN::NUMBER(num) => { result[1] = num; },
+        _ => { return Err(TOKEN_TO_ERROR_OFFSET[&operation]+RIGHT_ARG_MISS_ERROR_IDX); }
+    }
+
+    return Ok(result);
+}
+
+fn exec_bin_op(tokens: &mut Vec<TOKEN>, idx: &mut usize, prev_token: Option<TOKEN>, func: fn(u32, u32) -> u32) -> Result<(), u32> {
+    let operation: TOKEN = tokens[*idx].clone();
+    if (*idx)+1 < tokens.len(){
+        match return_numbers_for_bin_op(prev_token, tokens[(*idx)+1].clone(), operation) {
+            Ok([left, right]) => {
+                tokens[(*idx)-1] = TOKEN::NUMBER(func(left,right));
+                tokens.remove(*(idx)+1);
+                tokens.remove(*idx);
+
+                // because end of the loop we increase i and we are on i-1
+                *idx -= 1;
+                Ok(())
+            },
+            Err(error_code) => { return Err(error_code); }
+        }
+    }else{
+        return Err(TOKEN_TO_ERROR_OFFSET[&operation]+RIGHT_ARG_MISS_ERROR_IDX);
+    }
+}
+
+fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<u32, u32> {
     unsafe { LOG.push(format!("\nCurrent expr {:?}", tokens)); }
 
     let mut lparen_idxs:VecDeque<u32> = VecDeque::new();
@@ -84,7 +121,7 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<u32, &'static str> {
             TOKEN::LPAREN => lparen_idxs.push_back(i as u32),
             TOKEN::RPAREN => {
                 if lparen_idxs.is_empty(){
-                    return Err("Wrong paranthesis found");
+                    return Err(WRON_PAREN_ERROR);
                 }else{
                     let idx:u32 = lparen_idxs.pop_back().unwrap()+1;
                     // evaluate inside arithmetic because we found the parenthesis around them
@@ -120,55 +157,16 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<u32, &'static str> {
         unsafe { LOG.push(format!("In A loop {:?} at {}", tokens[i], i)); }
         match tokens[i] {
             TOKEN::PLUS => {
-                let left;
-                match prev_token {
-                    Some(TOKEN::NUMBER(p)) => {
-                        left = p;
-                    },
-                    None => { return Err("left argument is missing at an addition"); },
-                    _ => { return Err("left argument is wrong at an addition"); }
-                }
-                if i+1 < tokens.len() {
-                    if let TOKEN::NUMBER(d) = tokens[i+1] {
-                        tokens[i-1] = TOKEN::NUMBER(left+d);
-                        tokens.remove(i+1);
-                        tokens.remove(i);
-
-                        // because end of the loop we increase i and we are on i-1
-                        i -= 1;
-                    }else{
-                        return Err("right argument is missing at an addition");
-                    }
-                }else{
-                    return Err("right argument is missing at an addition");
-                }
+                match exec_bin_op(&mut tokens, &mut i, prev_token, |l,r| {l+r}) {
+                    Err(error_code) => { return Err(error_code); },
+                    Ok(_) => {}
+                };
             },
             TOKEN::MINUS => {
-                let left;
-                match prev_token {
-                    Some(TOKEN::NUMBER(p)) => {
-                        left = p;
-                    },
-                    None => { return Err("left argument is missing at a substraction"); },
-                    _ => { return Err("left argument is wrong at a substraction"); }
-                }
-                if i+1 < tokens.len() {
-                    if let TOKEN::NUMBER(d) = tokens[i+1] {
-                        if d > left {
-                            return Err("Negative numbers not supported");
-                        }
-                        tokens[i-1] = TOKEN::NUMBER(left-d);
-                        tokens.remove(i+1);
-                        tokens.remove(i);
-
-                        // because end of the loop we increase i and we are on i-1
-                        i -= 1;
-                    }else{
-                        return Err("right argument is missing at a substraction");
-                    }
-                }else{
-                    return Err("right argument is missing at a substraction");
-                }
+                match exec_bin_op(&mut tokens, &mut i, prev_token, |l,r| {l-r}) {
+                    Err(error_code) => { return Err(error_code); },
+                    Ok(_) => {}
+                };
             },
             _ => {}
         };
@@ -180,6 +178,66 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<u32, &'static str> {
         return Ok(d);
     }
     unreachable!()
+}
+
+fn eval(input: String){
+    match clean_input(input) {
+        Ok(xs) => match eval_tokens(xs) {
+            Ok(res) => println!("=> {}", res),
+            Err(error_code) => println!("\x1b[1;31mError: {}\x1b[0m", ERROR_MAP[&error_code])
+        },
+        Err(errors) => {
+            for error in errors.iter() {
+                println!("\x1b[1;31mError: {}\x1b[0m", error);
+            }
+        }
+    }
+}
+
+static mut LOG:Vec<String> = Vec::new();
+
+const UNKNOWN_TOKEN_ERROR:u32 = 1;
+const WRON_PAREN_ERROR:u32 = 6;
+const NEGATIVE_NUM_ERROR:u32 = 7;
+
+const ADD_ERROR_OFFSET:u32 = 2;
+const SUB_ERROR_OFFSET:u32 = 4;
+const LEFT_ARG_MISS_ERROR_IDX: u32 = 0; 
+const RIGHT_ARG_MISS_ERROR_IDX: u32 = 1; 
+
+lazy_static! {
+    static ref ERROR_MAP: HashMap<u32, &'static str> = {
+        let mut m = HashMap::new();
+        m.insert(1, "token cannot be parsed");
+
+        // Add offset
+        m.insert(2, "left argument is missing at an addition");
+        m.insert(3, "right argument is missing at an addition");
+        
+        // Sub offset
+        m.insert(4, "left argument is missing at a subtraction");
+        m.insert(5, "right argument is missing at an subtraction");
+        
+        m.insert(6, "Wrong parenthesis found");
+        m.insert(7, "Negative numbers not supported");
+        return m;
+    };
+
+    static ref TOKEN_TO_ERROR_OFFSET: HashMap<TOKEN, u32> = {
+        let mut m = HashMap::new();
+        m.insert(TOKEN::PLUS, ADD_ERROR_OFFSET);
+        m.insert(TOKEN::MINUS, SUB_ERROR_OFFSET);
+        return m;
+    };
+}
+
+
+fn print_help(){
+    println!("========= HELP =========");
+    println!("commands: \x1b[1;36m(quit, q)\x1b[0m");
+    println!("evaluation:");
+    println!("\x1b[1;36m\t((1)+11-3)\x1b[0m");
+    println!("\x1b[1;32m\t=> 9\x1b[0m")
 }
 
 fn get_line() -> String {
@@ -194,32 +252,9 @@ fn get_command(input: &str) -> COMMAND {
     let cmd = input.to_lowercase();
     if cmd=="quit" || cmd=="q" { return COMMAND::QUIT; }
     if cmd=="help" || cmd=="h" { return COMMAND::HELP; }
+    if cmd=="" { return COMMAND::EMPTY; }
     return COMMAND::EVAL;
 }
-
-fn eval(input: String){
-    match clean_input(input) {
-        Ok(xs) => match eval_tokens(xs) {
-            Ok(res) => println!("=> {}", res),
-            Err(msg) => println!("\x1b[1;31mError: {}\x1b[0m", msg)
-        },
-        Err(errors) => {
-            for error in errors.iter() {
-                println!("\x1b[1;31mError: {}\x1b[0m", error);
-            }
-        }
-    }
-}
-
-fn print_help(){
-    println!("========= HELP =========");
-    println!("commands: \x1b[1;36m(quit, q)\x1b[0m");
-    println!("evaluation:");
-    println!("\x1b[1;36m\t((1)+11-3)\x1b[0m");
-    println!("\x1b[1;32m\t=> 9\x1b[0m")
-}
-
-static mut LOG:Vec<String> = Vec::new(); 
 
 fn main() -> std::io::Result<()>{
     loop {
@@ -230,6 +265,7 @@ fn main() -> std::io::Result<()>{
         match get_command(&input) {
             COMMAND::EVAL => eval(input),
             COMMAND::HELP => print_help(),
+            COMMAND::EMPTY => { continue; }
             COMMAND::QUIT => { break; }
         }
 
