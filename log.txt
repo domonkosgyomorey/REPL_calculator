@@ -1,21 +1,64 @@
 
-Current expr [NUMBER(100), PLUS, NUMBER(10)]
-In P loop NUMBER(100) at 0
+Current expr [LPAREN, NUMBER(1), PLUS, NUMBER(2), RPAREN, MINUS, NUMBER(2), PLUS, NUMBER(3)]
+In P loop LPAREN at 0
+In P loop NUMBER(1) at 1
+In P loop PLUS at 2
+In P loop NUMBER(2) at 3
+In P loop RPAREN at 4
+Sub Expression: [NUMBER(1), PLUS, NUMBER(2)]
+
+Current expr [NUMBER(1), PLUS, NUMBER(2)]
+In P loop NUMBER(1) at 0
 In P loop PLUS at 1
-In P loop NUMBER(10) at 2
-In A loop NUMBER(100) at 0
+In P loop NUMBER(2) at 2
+In A loop NUMBER(1) at 0
 In A loop PLUS at 1
-Result: [NUMBER(110)]
+Result: [NUMBER(3)]
+Sub Expression Result: [NUMBER(3), NUMBER(1), PLUS, NUMBER(2), RPAREN, MINUS, NUMBER(2), PLUS, NUMBER(3)]
+Token Deleted: RPAREN at 4
+Token Deleted: NUMBER(2) at 3
+Token Deleted: PLUS at 2
+Token Deleted: NUMBER(1) at 1
+AFTER DELETE: [NUMBER(3), MINUS, NUMBER(2), PLUS, NUMBER(3)]
 
-Current expr [NUMBER(192)]
-In P loop NUMBER(192) at 0
-In A loop NUMBER(192) at 0
-Result: [NUMBER(192)]
-
-Current expr [NUMBER(102), MINUS, NUMBER(100)]
-In P loop NUMBER(102) at 0
+In P loop NUMBER(3) at 0
 In P loop MINUS at 1
-In P loop NUMBER(100) at 2
-In A loop NUMBER(102) at 0
+In P loop NUMBER(2) at 2
+In P loop PLUS at 3
+In P loop NUMBER(3) at 4
+In A loop NUMBER(3) at 0
 In A loop MINUS at 1
-Result: [NUMBER(2)]
+In A loop PLUS at 1
+Result: [NUMBER(4)]
+
+Current expr [LPAREN, NUMBER(1), PLUS, NUMBER(2), RPAREN, MUL, NUMBER(2), PLUS, NUMBER(3)]
+In P loop LPAREN at 0
+In P loop NUMBER(1) at 1
+In P loop PLUS at 2
+In P loop NUMBER(2) at 3
+In P loop RPAREN at 4
+Sub Expression: [NUMBER(1), PLUS, NUMBER(2)]
+
+Current expr [NUMBER(1), PLUS, NUMBER(2)]
+In P loop NUMBER(1) at 0
+In P loop PLUS at 1
+In P loop NUMBER(2) at 2
+In A loop NUMBER(1) at 0
+In A loop PLUS at 1
+Result: [NUMBER(3)]
+Sub Expression Result: [NUMBER(3), NUMBER(1), PLUS, NUMBER(2), RPAREN, MUL, NUMBER(2), PLUS, NUMBER(3)]
+Token Deleted: RPAREN at 4
+Token Deleted: NUMBER(2) at 3
+Token Deleted: PLUS at 2
+Token Deleted: NUMBER(1) at 1
+AFTER DELETE: [NUMBER(3), MUL, NUMBER(2), PLUS, NUMBER(3)]
+
+In P loop NUMBER(3) at 0
+In P loop MUL at 1
+In P loop NUMBER(2) at 2
+In P loop PLUS at 3
+In P loop NUMBER(3) at 4
+In A loop NUMBER(3) at 0
+In A loop MUL at 1
+In A loop PLUS at 1
+Result: [NUMBER(9)]

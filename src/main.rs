@@ -1,6 +1,4 @@
-use core::num;
 use std::collections::{HashMap, VecDeque};
-use std::ops::Mul;
 use lazy_static::lazy_static;
 use std::io::prelude::*;
 use std::num::Wrapping;
@@ -9,6 +7,7 @@ use std::num::Wrapping;
 enum TOKEN {
     PLUS,
     MINUS,
+    MUL,
     LPAREN,
     RPAREN,
     NUMBER(Wrapping<u32>)
@@ -25,6 +24,7 @@ fn parse_token(c: char) -> Result<TOKEN, u32>{
     match c {
         '+' => Ok(TOKEN::PLUS),
         '-' => Ok(TOKEN::MINUS),
+        '*' => Ok(TOKEN::MUL),
         '(' => Ok(TOKEN::LPAREN),
         ')' => Ok(TOKEN::RPAREN),
         _ => {
@@ -50,9 +50,7 @@ fn clean_input(input:String) -> Result<Vec<TOKEN>, Vec<String>> {
         }
     }
 
-    if errors.len() > 0 {
-        return Err(errors);
-    }
+    if errors.len() > 0 { return Err(errors); }
 
     let mut i = 0;
     while i < tokens.len() {
@@ -149,7 +147,8 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<Wrapping<u32>, u32> {
                     continue;
                 }
             },
-            _ => {}
+            // I did this because its easier to remember to add new branch
+            TOKEN::MINUS | TOKEN::MUL | TOKEN::NUMBER(_) | TOKEN::PLUS => {}
         };
         i+=1;
     }
@@ -169,7 +168,14 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<Wrapping<u32>, u32> {
                     Ok(_) => {}
                 };
             },
-            _ => {}
+            TOKEN::MUL => {
+                match exec_bin_op(&mut tokens, &mut i, prev_token, |l,r| {l*r}) {
+                    Err(error_code) => { return Err(error_code); },
+                    Ok(_) => {}
+                };
+            },
+            // I did this because its easier to remember to add new branch
+            TOKEN::LPAREN | TOKEN::RPAREN | TOKEN::NUMBER(_) => {}
         };
         prev_token = Some(tokens[i].clone());
         i += 1;
