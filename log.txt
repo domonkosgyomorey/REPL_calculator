@@ -1,104 +1,21 @@
 
-Current expr [NUMBER(1), PLUS, NUMBER(2)]
-In P loop NUMBER(1) at 0
+Current expr [NUMBER(100), PLUS, NUMBER(10)]
+In P loop NUMBER(100) at 0
 In P loop PLUS at 1
-In P loop NUMBER(2) at 2
-In A loop NUMBER(1) at 0
+In P loop NUMBER(10) at 2
+In A loop NUMBER(100) at 0
 In A loop PLUS at 1
-Result: [NUMBER(3)]
+Result: [NUMBER(110)]
 
-Current expr [LPAREN, NUMBER(1), PLUS, LPAREN, NUMBER(2), MINUS, NUMBER(1), RPAREN, PLUS, LPAREN, LPAREN, NUMBER(2), RPAREN, RPAREN, RPAREN]
-In P loop LPAREN at 0
-In P loop NUMBER(1) at 1
-In P loop PLUS at 2
-In P loop LPAREN at 3
-In P loop NUMBER(2) at 4
-In P loop MINUS at 5
-In P loop NUMBER(1) at 6
-In P loop RPAREN at 7
-Sub Expression: [NUMBER(2), MINUS, NUMBER(1)]
+Current expr [NUMBER(192)]
+In P loop NUMBER(192) at 0
+In A loop NUMBER(192) at 0
+Result: [NUMBER(192)]
 
-Current expr [NUMBER(2), MINUS, NUMBER(1)]
-In P loop NUMBER(2) at 0
+Current expr [NUMBER(102), MINUS, NUMBER(100)]
+In P loop NUMBER(102) at 0
 In P loop MINUS at 1
-In P loop NUMBER(1) at 2
-In A loop NUMBER(2) at 0
+In P loop NUMBER(100) at 2
+In A loop NUMBER(102) at 0
 In A loop MINUS at 1
-Result: [NUMBER(1)]
-Sub Expression Result: [LPAREN, NUMBER(1), PLUS, NUMBER(1), NUMBER(2), MINUS, NUMBER(1), RPAREN, PLUS, LPAREN, LPAREN, NUMBER(2), RPAREN, RPAREN, RPAREN]
-Token Deleted: RPAREN at 7
-Token Deleted: NUMBER(1) at 6
-Token Deleted: MINUS at 5
-Token Deleted: NUMBER(2) at 4
-AFTER DELETE: [LPAREN, NUMBER(1), PLUS, NUMBER(1), PLUS, LPAREN, LPAREN, NUMBER(2), RPAREN, RPAREN, RPAREN]
-
-In P loop LPAREN at 0
-In P loop NUMBER(1) at 1
-In P loop PLUS at 2
-In P loop NUMBER(1) at 3
-In P loop PLUS at 4
-In P loop LPAREN at 5
-In P loop LPAREN at 6
-In P loop NUMBER(2) at 7
-In P loop RPAREN at 8
-Sub Expression: [NUMBER(2)]
-
-Current expr [NUMBER(2)]
-In P loop NUMBER(2) at 0
-In A loop NUMBER(2) at 0
 Result: [NUMBER(2)]
-Sub Expression Result: [LPAREN, NUMBER(1), PLUS, NUMBER(1), PLUS, LPAREN, NUMBER(2), NUMBER(2), RPAREN, RPAREN, RPAREN]
-Token Deleted: RPAREN at 8
-Token Deleted: NUMBER(2) at 7
-AFTER DELETE: [LPAREN, NUMBER(1), PLUS, NUMBER(1), PLUS, LPAREN, NUMBER(2), RPAREN, RPAREN]
-
-In P loop LPAREN at 0
-In P loop NUMBER(1) at 1
-In P loop PLUS at 2
-In P loop NUMBER(1) at 3
-In P loop PLUS at 4
-In P loop LPAREN at 5
-In P loop NUMBER(2) at 6
-In P loop RPAREN at 7
-Sub Expression: [NUMBER(2)]
-
-Current expr [NUMBER(2)]
-In P loop NUMBER(2) at 0
-In A loop NUMBER(2) at 0
-Result: [NUMBER(2)]
-Sub Expression Result: [LPAREN, NUMBER(1), PLUS, NUMBER(1), PLUS, NUMBER(2), NUMBER(2), RPAREN, RPAREN]
-Token Deleted: RPAREN at 7
-Token Deleted: NUMBER(2) at 6
-AFTER DELETE: [LPAREN, NUMBER(1), PLUS, NUMBER(1), PLUS, NUMBER(2), RPAREN]
-
-In P loop LPAREN at 0
-In P loop NUMBER(1) at 1
-In P loop PLUS at 2
-In P loop NUMBER(1) at 3
-In P loop PLUS at 4
-In P loop NUMBER(2) at 5
-In P loop RPAREN at 6
-Sub Expression: [NUMBER(1), PLUS, NUMBER(1), PLUS, NUMBER(2)]
-
-Current expr [NUMBER(1), PLUS, NUMBER(1), PLUS, NUMBER(2)]
-In P loop NUMBER(1) at 0
-In P loop PLUS at 1
-In P loop NUMBER(1) at 2
-In P loop PLUS at 3
-In P loop NUMBER(2) at 4
-In A loop NUMBER(1) at 0
-In A loop PLUS at 1
-In A loop PLUS at 1
-Result: [NUMBER(4)]
-Sub Expression Result: [NUMBER(4), NUMBER(1), PLUS, NUMBER(1), PLUS, NUMBER(2), RPAREN]
-Token Deleted: RPAREN at 6
-Token Deleted: NUMBER(2) at 5
-Token Deleted: PLUS at 4
-Token Deleted: NUMBER(1) at 3
-Token Deleted: PLUS at 2
-Token Deleted: NUMBER(1) at 1
-AFTER DELETE: [NUMBER(4)]
-
-In P loop NUMBER(4) at 0
-In A loop NUMBER(4) at 0
-Result: [NUMBER(4)]

@@ -1,6 +1,9 @@
+use core::num;
 use std::collections::{HashMap, VecDeque};
+use std::ops::Mul;
 use lazy_static::lazy_static;
 use std::io::prelude::*;
+use std::num::Wrapping;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 enum TOKEN {
@@ -8,7 +11,7 @@ enum TOKEN {
     MINUS,
     LPAREN,
     RPAREN,
-    NUMBER(u32)
+    NUMBER(Wrapping<u32>)
 }
 
 enum COMMAND {
@@ -26,7 +29,7 @@ fn parse_token(c: char) -> Result<TOKEN, u32>{
         ')' => Ok(TOKEN::RPAREN),
         _ => {
             if c.is_digit(10) {
-                 Ok(TOKEN::NUMBER(c.to_digit(10).unwrap()))
+                 Ok(TOKEN::NUMBER(Wrapping(c.to_digit(10).unwrap())))
             } else {
                  Err(UNKNOWN_TOKEN_ERROR) 
             }
@@ -56,11 +59,9 @@ fn clean_input(input:String) -> Result<Vec<TOKEN>, Vec<String>> {
         if let TOKEN::NUMBER(d) = tokens[i]{
             i += 1;
             if i >= tokens.len() {break}
-            let mut number: u32 = d;
-            let mut digit_num:u32 = d;
+            let mut number: Wrapping<u32> = d;
             while let TOKEN::NUMBER(d) = tokens[i] {
-                number += (10 as u32).pow(digit_num)*d;
-                digit_num += 1;
+                number = number*Wrapping(10)+d;
                 tokens.remove(i);
                 if i >= tokens.len() {break}
             }
@@ -73,8 +74,8 @@ fn clean_input(input:String) -> Result<Vec<TOKEN>, Vec<String>> {
 }
 
 
-fn return_numbers_for_bin_op(prev_token: Option<TOKEN>, next_token: TOKEN, operation: TOKEN) -> Result<[u32;2], u32>{
-    let mut result: [u32; 2] = [0, 0];
+fn return_numbers_for_bin_op(prev_token: Option<TOKEN>, next_token: TOKEN, operation: TOKEN) -> Result<[Wrapping<u32>;2], u32>{
+    let mut result: [Wrapping<u32>; 2] = [Wrapping(0); 2];
     match prev_token {
         Some(TOKEN::NUMBER(num)) => { result[0] = num; },
         _ => { return Err(TOKEN_TO_ERROR_OFFSET[&operation]+LEFT_ARG_MISS_ERROR_IDX); }
@@ -87,7 +88,7 @@ fn return_numbers_for_bin_op(prev_token: Option<TOKEN>, next_token: TOKEN, opera
     return Ok(result);
 }
 
-fn exec_bin_op(tokens: &mut Vec<TOKEN>, idx: &mut usize, prev_token: Option<TOKEN>, func: fn(u32, u32) -> u32) -> Result<(), u32> {
+fn exec_bin_op(tokens: &mut Vec<TOKEN>, idx: &mut usize, prev_token: Option<TOKEN>, func: fn(Wrapping<u32>, Wrapping<u32>) -> Wrapping<u32>) -> Result<(), u32> {
     let operation: TOKEN = tokens[*idx].clone();
     if (*idx)+1 < tokens.len(){
         match return_numbers_for_bin_op(prev_token, tokens[(*idx)+1].clone(), operation) {
@@ -107,7 +108,7 @@ fn exec_bin_op(tokens: &mut Vec<TOKEN>, idx: &mut usize, prev_token: Option<TOKE
     }
 }
 
-fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<u32, u32> {
+fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<Wrapping<u32>, u32> {
     unsafe { LOG.push(format!("\nCurrent expr {:?}", tokens)); }
 
     let mut lparen_idxs:VecDeque<u32> = VecDeque::new();
@@ -198,7 +199,6 @@ static mut LOG:Vec<String> = Vec::new();
 
 const UNKNOWN_TOKEN_ERROR:u32 = 1;
 const WRON_PAREN_ERROR:u32 = 6;
-const NEGATIVE_NUM_ERROR:u32 = 7;
 
 const ADD_ERROR_OFFSET:u32 = 2;
 const SUB_ERROR_OFFSET:u32 = 4;
@@ -219,7 +219,6 @@ lazy_static! {
         m.insert(5, "right argument is missing at an subtraction");
         
         m.insert(6, "Wrong parenthesis found");
-        m.insert(7, "Negative numbers not supported");
         return m;
     };
 
