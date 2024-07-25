@@ -1,29 +1,58 @@
 
-Current expr [NUMBER(1), PLUS, NUMBER(2), PLUS, NUMBER(3)]
+Current expr [LPAREN, RPAREN]
+In Parenthesis loop LPAREN at 0
+In Parenthesis loop RPAREN at 1
+Sub Expression: []
+
+Current expr []
+
+Current expr [LPAREN, NUMBER(1), RPAREN]
+In Parenthesis loop LPAREN at 0
+In Parenthesis loop NUMBER(1) at 1
+In Parenthesis loop RPAREN at 2
+Sub Expression: [NUMBER(1)]
+
+Current expr [NUMBER(1)]
+In Parenthesis loop NUMBER(1) at 0
+In Arithmetic loop NUMBER(1) at 0
+Result: [NUMBER(1)]
+Sub Expression Result: [NUMBER(1), NUMBER(1), RPAREN]
+Token Deleted: RPAREN at 2
+Token Deleted: NUMBER(1) at 1
+AFTER DELETE: [NUMBER(1)]
+
+In Parenthesis loop NUMBER(1) at 0
+In Arithmetic loop NUMBER(1) at 0
+Result: [NUMBER(1)]
+
+Current expr [LPAREN, NUMBER(1), PLUS, NUMBER(2), RPAREN, MUL, NUMBER(2), MINUS, NUMBER(2)]
+In Parenthesis loop LPAREN at 0
+In Parenthesis loop NUMBER(1) at 1
+In Parenthesis loop PLUS at 2
+In Parenthesis loop NUMBER(2) at 3
+In Parenthesis loop RPAREN at 4
+Sub Expression: [NUMBER(1), PLUS, NUMBER(2)]
+
+Current expr [NUMBER(1), PLUS, NUMBER(2)]
 In Parenthesis loop NUMBER(1) at 0
 In Parenthesis loop PLUS at 1
 In Parenthesis loop NUMBER(2) at 2
-In Parenthesis loop PLUS at 3
-In Parenthesis loop NUMBER(3) at 4
 In Arithmetic loop NUMBER(1) at 0
 In Arithmetic loop PLUS at 1
-In Arithmetic loop PLUS at 1
-Result: [NUMBER(6)]
+Result: [NUMBER(3)]
+Sub Expression Result: [NUMBER(3), NUMBER(1), PLUS, NUMBER(2), RPAREN, MUL, NUMBER(2), MINUS, NUMBER(2)]
+Token Deleted: RPAREN at 4
+Token Deleted: NUMBER(2) at 3
+Token Deleted: PLUS at 2
+Token Deleted: NUMBER(1) at 1
+AFTER DELETE: [NUMBER(3), MUL, NUMBER(2), MINUS, NUMBER(2)]
 
-Current expr [NUMBER(1), MINUS, NUMBER(3), PLUS, NUMBER(4)]
-In Parenthesis loop NUMBER(1) at 0
-In Parenthesis loop MINUS at 1
-In Parenthesis loop NUMBER(3) at 2
-In Parenthesis loop PLUS at 3
-In Parenthesis loop NUMBER(4) at 4
-In Arithmetic loop NUMBER(1) at 0
+In Parenthesis loop NUMBER(3) at 0
+In Parenthesis loop MUL at 1
+In Parenthesis loop NUMBER(2) at 2
+In Parenthesis loop MINUS at 3
+In Parenthesis loop NUMBER(2) at 4
+In Arithmetic loop NUMBER(3) at 0
+In Arithmetic loop MUL at 1
 In Arithmetic loop MINUS at 1
-In Arithmetic loop PLUS at 1
-Result: [NUMBER(2)]
-
-Current expr [NUMBER(2), DIV, NUMBER(0)]
-In Parenthesis loop NUMBER(2) at 0
-In Parenthesis loop DIV at 1
-In Parenthesis loop NUMBER(0) at 2
-In Arithmetic loop NUMBER(2) at 0
-In Arithmetic loop DIV at 1
+Result: [NUMBER(4)]
