@@ -8,6 +8,7 @@ enum TOKEN {
     PLUS,
     MINUS,
     MUL,
+    DIV,
     LPAREN,
     RPAREN,
     NUMBER(Wrapping<u32>)
@@ -27,6 +28,7 @@ fn parse_token(c: char) -> Result<TOKEN, u32>{
         '*' => Ok(TOKEN::MUL),
         '(' => Ok(TOKEN::LPAREN),
         ')' => Ok(TOKEN::RPAREN),
+        '/' => Ok(TOKEN::DIV),
         _ => {
             if c.is_digit(10) {
                  Ok(TOKEN::NUMBER(Wrapping(c.to_digit(10).unwrap())))
@@ -86,12 +88,16 @@ fn return_numbers_for_bin_op(prev_token: Option<TOKEN>, next_token: TOKEN, opera
     return Ok(result);
 }
 
-fn exec_bin_op(tokens: &mut Vec<TOKEN>, idx: &mut usize, prev_token: Option<TOKEN>, func: fn(Wrapping<u32>, Wrapping<u32>) -> Wrapping<u32>) -> Result<(), u32> {
+fn exec_bin_op(tokens: &mut Vec<TOKEN>, idx: &mut usize, prev_token: Option<TOKEN>, func: fn(Wrapping<u32>, Wrapping<u32>) -> Result<Wrapping<u32>, u32>) -> Result<(), u32> {
     let operation: TOKEN = tokens[*idx].clone();
     if (*idx)+1 < tokens.len(){
         match return_numbers_for_bin_op(prev_token, tokens[(*idx)+1].clone(), operation) {
             Ok([left, right]) => {
-                tokens[(*idx)-1] = TOKEN::NUMBER(func(left,right));
+                match func(left,right) {
+                    Ok(result) => { tokens[(*idx)-1] = TOKEN::NUMBER(result); },
+                    Err(error_code) => { return Err(error_code); }
+                }
+
                 tokens.remove(*(idx)+1);
                 tokens.remove(*idx);
 
@@ -115,7 +121,7 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<Wrapping<u32>, u32> {
     // paren check
     let mut i = 0;
     while i < tokens.len(){
-        unsafe { LOG.push(format!("In P loop {:?} at {}", tokens[i], i)); }
+        unsafe { LOG.push(format!("In Parenthesis loop {:?} at {}", tokens[i], i)); }
         match tokens[i] {
             TOKEN::LPAREN => lparen_idxs.push_back(i as u32),
             TOKEN::RPAREN => {
@@ -148,35 +154,27 @@ fn eval_tokens(mut tokens :Vec<TOKEN>) -> Result<Wrapping<u32>, u32> {
                 }
             },
             // I did this because its easier to remember to add new branch
-            TOKEN::MINUS | TOKEN::MUL | TOKEN::NUMBER(_) | TOKEN::PLUS => {}
+            TOKEN::MINUS | TOKEN::MUL | TOKEN::NUMBER(_) | TOKEN::PLUS | TOKEN::DIV => {}
         };
         i+=1;
     }
     i = 0;
     while i < tokens.len() {
-        unsafe { LOG.push(format!("In A loop {:?} at {}", tokens[i], i)); }
-        match tokens[i] {
-            TOKEN::PLUS => {
-                match exec_bin_op(&mut tokens, &mut i, prev_token, |l,r| {l+r}) {
-                    Err(error_code) => { return Err(error_code); },
-                    Ok(_) => {}
-                };
-            },
-            TOKEN::MINUS => {
-                match exec_bin_op(&mut tokens, &mut i, prev_token, |l,r| {l-r}) {
-                    Err(error_code) => { return Err(error_code); },
-                    Ok(_) => {}
-                };
-            },
-            TOKEN::MUL => {
-                match exec_bin_op(&mut tokens, &mut i, prev_token, |l,r| {l*r}) {
-                    Err(error_code) => { return Err(error_code); },
-                    Ok(_) => {}
-                };
-            },
+        unsafe { LOG.push(format!("In Arithmetic loop {:?} at {}", tokens[i], i)); }
+        if let Err(error_code) = match tokens[i] {
+            TOKEN::PLUS => exec_bin_op(&mut tokens, &mut i, prev_token, |l,r| {Ok(l+r)}),
+            TOKEN::MINUS => exec_bin_op(&mut tokens, &mut i, prev_token, |l,r| {Ok(l-r)}),
+            TOKEN::MUL => exec_bin_op(&mut tokens, &mut i, prev_token, |l,r| {Ok(l*r)}),
+            TOKEN::DIV => exec_bin_op(&mut tokens, &mut i, prev_token, |l,r| {
+                if r.0==0 { return Err(DIVIDE_BY_ZERO_ERROR); }
+                Ok(l/r)
+            }),
             // I did this because its easier to remember to add new branch
-            TOKEN::LPAREN | TOKEN::RPAREN | TOKEN::NUMBER(_) => {}
+            TOKEN::LPAREN | TOKEN::RPAREN | TOKEN::NUMBER(_) => Ok(())
+        }{
+            return Err(error_code);
         };
+
         prev_token = Some(tokens[i].clone());
         i += 1;
     }
@@ -204,27 +202,29 @@ fn eval(input: String){
 static mut LOG:Vec<String> = Vec::new();
 
 const UNKNOWN_TOKEN_ERROR:u32 = 1;
-const WRON_PAREN_ERROR:u32 = 6;
+const WRON_PAREN_ERROR:u32 = 2;
+const DIVIDE_BY_ZERO_ERROR:u32 = 3;
 
-const ADD_ERROR_OFFSET:u32 = 2;
-const SUB_ERROR_OFFSET:u32 = 4;
+const ADD_ERROR_OFFSET:u32 = 4;
+const SUB_ERROR_OFFSET:u32 = 6;
 const LEFT_ARG_MISS_ERROR_IDX: u32 = 0; 
 const RIGHT_ARG_MISS_ERROR_IDX: u32 = 1; 
 
 lazy_static! {
     static ref ERROR_MAP: HashMap<u32, &'static str> = {
         let mut m = HashMap::new();
-        m.insert(1, "token cannot be parsed");
+        m.insert(1, "Token cannot be parsed");
+        m.insert(2, "Wrong parenthesis found");
+        m.insert(3, "Divided by zero");
 
         // Add offset
-        m.insert(2, "left argument is missing at an addition");
-        m.insert(3, "right argument is missing at an addition");
+        m.insert(4, "Left argument is missing at an addition");
+        m.insert(5, "Right argument is missing at an addition");
         
         // Sub offset
-        m.insert(4, "left argument is missing at a subtraction");
-        m.insert(5, "right argument is missing at an subtraction");
+        m.insert(6, "Left argument is missing at a subtraction");
+        m.insert(7, "Right argument is missing at an subtraction");
         
-        m.insert(6, "Wrong parenthesis found");
         return m;
     };
 
