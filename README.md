@@ -25,5 +25,18 @@ The expression evaluation is follows the following precedence<br>
 - ✅ A handy REPL
 - ❌ Automatic test
 
+## Preview
+![REPL preview](./previews/preview1.png)
+
+## Build 'N Run
+```console
+cargo build
+cargo run
+```
+
+## Dependencies
+- [lazy_static](https://crates.io/crates/lazy_static)
+- [rayon](https://crates.io/crates/rayon)
+
 ## Tested On
 Windows
