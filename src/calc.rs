@@ -59,7 +59,7 @@ lazy_static! {
 }
 
 pub fn write_log(file_path: &'static str) -> Result<(),std::io::Error> {
-    let mut fp = std::fs::OpenOptions::new().write(true).truncate(true).open(file_path)?;
+    let mut fp = std::fs::OpenOptions::new().write(true).create(true).truncate(true).open(file_path)?;
     unsafe {
         for line in LOG.iter() {
             fp.write(line.as_bytes())?;
