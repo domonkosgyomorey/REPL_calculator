@@ -71,12 +71,12 @@ pub fn write_log(file_path: &'static str) -> Result<(),std::io::Error> {
 
 pub fn eval(input: String, output: &mut Vec<String>) {
     if !is_parens_correct
-(input.chars()) { output.push(format!("{}", ERROR_MAP[&WRON_PAREN_ERROR])); return; }
+(input.chars()) { output.push(format!("\x1b[1;31m{}\x1b[0m", ERROR_MAP[&WRON_PAREN_ERROR])); return; }
     match lexer(input) {
         Ok(xs) => match parser(xs) {
             Ok(res) => {
                 match res {
-                    Some(res) => output.push(format!("=> {}", res)),
+                    Some(res) => output.push(format!("\x1b[1;32m=> {}\x1b[0m", res)),
                     None => output.push(format!("\x1b[1;No Result\x1b[0m"))
                 }
             }
@@ -94,8 +94,9 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, Vec<String>> {
     let mut tokens: Vec<TOKEN> = Vec::new();
     let mut errors: Vec<String> = Vec::new();
     let mut i: usize = 0;
+    let mut nc: char;
     while i < input.len() {
-        let nc: char = input.chars().nth(i).unwrap();
+        nc = input.chars().nth(i).unwrap();
         if nc != ' ' {
             match nc {
                 '+' => tokens.push(TOKEN::PLUS),
@@ -108,8 +109,13 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, Vec<String>> {
                     if nc.is_digit(10) {
                         let mut number:String = String::new();
                         number.push(nc);
-                        while i+1<input.len() && input.chars().nth(i+1).unwrap().is_digit(10) {
-                            number.push(input.chars().nth(i+1).unwrap());
+                        while i+1<input.len() {
+                            nc = input.chars().nth(i+1).unwrap();
+                            if nc.is_digit(10) {
+                                number.push(input.chars().nth(i+1).unwrap());
+                            }else if !(nc.is_digit(10) || nc == ' ') {
+                                break;
+                            }
                             i += 1;
                         }
                         tokens.push(TOKEN::NUMBER(Wrapping(number.parse().unwrap())));

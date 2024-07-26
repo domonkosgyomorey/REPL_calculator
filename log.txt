@@ -1,37 +1,86 @@
 
-Current expr [NUMBER(1), PLUS, LPAREN, NUMBER(2), MINUS, NUMBER(1), RPAREN, MUL, NUMBER(5), DIV, NUMBER(2)]
+Current expr [NUMBER(1), PLUS, LPAREN, NUMBER(11), RPAREN]
 In Parenthesis loop NUMBER(1) at 0
 In Parenthesis loop PLUS at 1
 In Parenthesis loop LPAREN at 2
-In Parenthesis loop NUMBER(2) at 3
-In Parenthesis loop MINUS at 4
-In Parenthesis loop NUMBER(1) at 5
-In Parenthesis loop RPAREN at 6
-Sub Expression: [NUMBER(2), MINUS, NUMBER(1)]
+In Parenthesis loop NUMBER(11) at 3
+In Parenthesis loop RPAREN at 4
+Sub Expression: [NUMBER(11)]
 
-Current expr [NUMBER(2), MINUS, NUMBER(1)]
-In Parenthesis loop NUMBER(2) at 0
-In Parenthesis loop MINUS at 1
-In Parenthesis loop NUMBER(1) at 2
-In Arithmetic loop NUMBER(2) at 0
-In Arithmetic loop MINUS at 1
-Result: [NUMBER(1)]
-Sub Expression Result: [NUMBER(1), PLUS, NUMBER(1), NUMBER(2), MINUS, NUMBER(1), RPAREN, MUL, NUMBER(5), DIV, NUMBER(2)]
-Token Deleted: RPAREN at 6
-Token Deleted: NUMBER(1) at 5
-Token Deleted: MINUS at 4
-Token Deleted: NUMBER(2) at 3
-AFTER DELETE: [NUMBER(1), PLUS, NUMBER(1), MUL, NUMBER(5), DIV, NUMBER(2)]
+Current expr [NUMBER(11)]
+In Parenthesis loop NUMBER(11) at 0
+In Arithmetic loop NUMBER(11) at 0
+Result: [NUMBER(11)]
+Sub Expression Result: [NUMBER(1), PLUS, NUMBER(11), NUMBER(11), RPAREN]
+Token Deleted: RPAREN at 4
+Token Deleted: NUMBER(11) at 3
+AFTER DELETE: [NUMBER(1), PLUS, NUMBER(11)]
 
 In Parenthesis loop NUMBER(1) at 0
 In Parenthesis loop PLUS at 1
+In Parenthesis loop NUMBER(11) at 2
+In Arithmetic loop NUMBER(1) at 0
+In Arithmetic loop PLUS at 1
+Result: [NUMBER(12)]
+
+Current expr [NUMBER(2), MUL, NUMBER(4), DIV, NUMBER(3), MINUS, NUMBER(1)]
+In Parenthesis loop NUMBER(2) at 0
+In Parenthesis loop MUL at 1
+In Parenthesis loop NUMBER(4) at 2
+In Parenthesis loop DIV at 3
+In Parenthesis loop NUMBER(3) at 4
+In Parenthesis loop MINUS at 5
+In Parenthesis loop NUMBER(1) at 6
+In Arithmetic loop NUMBER(2) at 0
+In Arithmetic loop MUL at 1
+In Arithmetic loop DIV at 1
+In Arithmetic loop MINUS at 1
+Result: [NUMBER(1)]
+
+Current expr [LPAREN, LPAREN, NUMBER(1), RPAREN, RPAREN, PLUS, NUMBER(9), MUL, NUMBER(1000)]
+In Parenthesis loop LPAREN at 0
+In Parenthesis loop LPAREN at 1
 In Parenthesis loop NUMBER(1) at 2
+In Parenthesis loop RPAREN at 3
+Sub Expression: [NUMBER(1)]
+
+Current expr [NUMBER(1)]
+In Parenthesis loop NUMBER(1) at 0
+In Arithmetic loop NUMBER(1) at 0
+Result: [NUMBER(1)]
+Sub Expression Result: [LPAREN, NUMBER(1), NUMBER(1), RPAREN, RPAREN, PLUS, NUMBER(9), MUL, NUMBER(1000)]
+Token Deleted: RPAREN at 3
+Token Deleted: NUMBER(1) at 2
+AFTER DELETE: [LPAREN, NUMBER(1), RPAREN, PLUS, NUMBER(9), MUL, NUMBER(1000)]
+
+In Parenthesis loop LPAREN at 0
+In Parenthesis loop NUMBER(1) at 1
+In Parenthesis loop RPAREN at 2
+Sub Expression: [NUMBER(1)]
+
+Current expr [NUMBER(1)]
+In Parenthesis loop NUMBER(1) at 0
+In Arithmetic loop NUMBER(1) at 0
+Result: [NUMBER(1)]
+Sub Expression Result: [NUMBER(1), NUMBER(1), RPAREN, PLUS, NUMBER(9), MUL, NUMBER(1000)]
+Token Deleted: RPAREN at 2
+Token Deleted: NUMBER(1) at 1
+AFTER DELETE: [NUMBER(1), PLUS, NUMBER(9), MUL, NUMBER(1000)]
+
+In Parenthesis loop NUMBER(1) at 0
+In Parenthesis loop PLUS at 1
+In Parenthesis loop NUMBER(9) at 2
 In Parenthesis loop MUL at 3
-In Parenthesis loop NUMBER(5) at 4
-In Parenthesis loop DIV at 5
-In Parenthesis loop NUMBER(2) at 6
+In Parenthesis loop NUMBER(1000) at 4
 In Arithmetic loop NUMBER(1) at 0
 In Arithmetic loop PLUS at 1
 In Arithmetic loop MUL at 1
-In Arithmetic loop DIV at 1
-Result: [NUMBER(5)]
+Result: [NUMBER(10000)]
+
+Current expr [NUMBER(1), MINUS, NUMBER(2)]
+In Parenthesis loop NUMBER(1) at 0
+In Parenthesis loop MINUS at 1
+In Parenthesis loop NUMBER(2) at 2
+In Arithmetic loop NUMBER(1) at 0
+In Arithmetic loop MINUS at 1
+Result: [NUMBER(4294967295)]
