@@ -5,3 +5,11 @@ edition = "2021"
 
 [dependencies]
 lazy_static = "1.5.0"
+
+[[bin]]
+edition = "2024"
+name = "calc"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
