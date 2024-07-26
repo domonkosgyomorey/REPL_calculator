@@ -1,20 +1,29 @@
-Tokens [NUMBER(1, 0), PLUS(1), LPAREN(2), NUMBER(6, 3), DIV(4), NUMBER(2, 5), RPAREN(6), MUL(7), NUMBER(2, 8)]
-Infixed syntax [NUMBER(1, 0), NUMBER(6, 3), NUMBER(2, 5), DIV(4), NUMBER(2, 8), MUL(7), PLUS(1)]
-Expression tree Ok(Operator { op: PLUS(1), left: Number(1), right: Operator { op: MUL(7), left: Operator { op: DIV(4), left: Number(6), right: Number(2) }, right: Number(2) } })
+Tokens [NUMBER(1, 0), PLUS(1), NUMBER(12, 3), DIV(4), NUMBER(4, 5), DIV(6), NUMBER(3, 7)]
+Infixed syntax [NUMBER(1, 0), NUMBER(12, 3), NUMBER(4, 5), DIV(4), NUMBER(3, 7), DIV(6), PLUS(1)]
+Expression tree Ok(Operator { op: PLUS(1), left: Number(1), right: Operator { op: DIV(6), left: Operator { op: DIV(4), left: Number(12), right: Number(4) }, right: Number(3) } })
+2
+
+Tokens [NUMBER(12, 1), DIV(2), NUMBER(4, 3), PLUS(4), NUMBER(12, 6), DIV(7), NUMBER(3, 8)]
+Infixed syntax [NUMBER(12, 1), NUMBER(4, 3), DIV(2), NUMBER(12, 6), NUMBER(3, 8), DIV(7), PLUS(4)]
+Expression tree Ok(Operator { op: PLUS(4), left: Operator { op: DIV(2), left: Number(12), right: Number(4) }, right: Operator { op: DIV(7), left: Number(12), right: Number(3) } })
 7
 
-Tokens [LPAREN(0), LPAREN(1), LPAREN(2), NUMBER(1, 3), RPAREN(4), RPAREN(5), RPAREN(6), MINUS(7), NUMBER(2, 8), PLUS(9), NUMBER(2, 10)]
-Infixed syntax [NUMBER(1, 3), NUMBER(2, 8), MINUS(7), NUMBER(2, 10), PLUS(9)]
-Expression tree Ok(Operator { op: PLUS(9), left: Operator { op: MINUS(7), left: Number(1), right: Number(2) }, right: Number(2) })
-1
-
-Tokens [LPAREN(0), LPAREN(1), LPAREN(2), NUMBER(1, 3), RPAREN(4), RPAREN(5), RPAREN(6), MINUS(7), NUMBER(2, 8)]
-Infixed syntax [NUMBER(1, 3), NUMBER(2, 8), MINUS(7)]
-Expression tree Ok(Operator { op: MINUS(7), left: Number(1), right: Number(2) })
+Tokens [NUMBER(1, 0), MINUS(1), NUMBER(2, 2)]
+Infixed syntax [NUMBER(1, 0), NUMBER(2, 2), MINUS(1)]
+Expression tree Ok(Operator { op: MINUS(1), left: Number(1), right: Number(2) })
 4294967295
 
-Tokens [NUMBER(2, 0), MUL(1), LPAREN(2), NUMBER(10, 4), MINUS(5), NUMBER(5, 6), RPAREN(7)]
-Infixed syntax [NUMBER(2, 0), NUMBER(10, 4), NUMBER(5, 6), MINUS(5), MUL(1)]
-Expression tree Ok(Operator { op: MUL(1), left: Number(2), right: Operator { op: MINUS(5), left: Number(10), right: Number(5) } })
-10
+Tokens [LPAREN(0), NUMBER(1, 1), MINUS(2), NUMBER(2, 3), RPAREN(4), PLUS(5), NUMBER(3, 6)]
+Infixed syntax [NUMBER(1, 1), NUMBER(2, 3), MINUS(2), NUMBER(3, 6), PLUS(5)]
+Expression tree Ok(Operator { op: PLUS(5), left: Operator { op: MINUS(2), left: Number(1), right: Number(2) }, right: Number(3) })
+2
 
+Tokens [LPAREN(0), RPAREN(1)]
+Infixed syntax []
+Expression tree Err((4, None))
+Tokens [NUMBER(4, 0), DIV(1), NUMBER(0, 2)]
+Infixed syntax [NUMBER(4, 0), NUMBER(0, 2), DIV(1)]
+Expression tree Ok(Operator { op: DIV(1), left: Number(4), right: Number(0) })
+Tokens [LPAREN(0), NUMBER(1, 1), RPAREN(2), MUL(3), NUMBER(3, 4), MINUS(5), LPAREN(6), NUMBER(3, 7), PLUS(8), RPAREN(9), DIV(10), NUMBER(5, 11)]
+Infixed syntax [NUMBER(1, 1), NUMBER(3, 4), MUL(3), NUMBER(3, 7), PLUS(8), NUMBER(5, 11), DIV(10), MINUS(5)]
+Expression tree Err((9, Some(5)))

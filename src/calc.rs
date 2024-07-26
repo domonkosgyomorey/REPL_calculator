@@ -12,6 +12,7 @@ enum TOKEN {
     MINUS(usize),
     MUL(usize),
     DIV(usize),
+    POW(usize),
     LPAREN(usize),
     RPAREN(usize),
     NUMBER(Wrapping<u32>, usize),
@@ -25,6 +26,7 @@ enum ASTNode {
 
 #[derive(PartialEq)]
 enum Associativity {
+    RIGHT,
     LEFT,
     NOT,
 }
@@ -51,6 +53,7 @@ impl ASTNode {
                         if rval == Wrapping(0) { return Err((DIVIDE_BY_ZERO_ERROR, Some(*char_idx))); }
                         return Ok(lval / rval);
                     },
+                    TOKEN::POW(_) => Ok(Wrapping(lval.0.wrapping_pow(rval.0))),
                     _ => unreachable!(),
                 }
             }
@@ -95,9 +98,10 @@ pub fn write_log(file_path: &'static str) -> Result<(), std::io::Error>{
     Ok(())
 }
 
-pub fn eval(input: String, output: &mut Vec<String>) {
-    if !is_parens_correct
-(input.chars()) { output.push(format_error(ERROR_MAP[&WRON_PAREN_ERROR], None)); return; }
+pub fn eval(input: String) -> Result<Wrapping<u32>, (String, Option<usize>)>{
+    if !is_parens_correct(input.chars()) { 
+        return Err((ERROR_MAP[&WRON_PAREN_ERROR].to_string(), None));
+    }
     match lexer(input) {
         Ok(tokens) => {
             unsafe { LOG.push(format!("Tokens {:?}", tokens)); }
@@ -106,39 +110,32 @@ pub fn eval(input: String, output: &mut Vec<String>) {
             let expression_tree = generate_ast(infixed_tokens);
             unsafe { LOG.push(format!("Expression tree {:?}", expression_tree)); }
             match expression_tree {
-                Ok(res) => output.push(match res.eval() {
-                    Ok(res) => {
-                        unsafe { LOG.push(format!("{:?}", res)); }
-                        unsafe { LOG.push("".to_string()); }
-                        format_result(res)
-                    },
-                    Err((err_code, err_idx)) => format_error(ERROR_MAP[&err_code], err_idx)
-                }),
-                Err((err_code, err_idx)) => output.push(format_error(ERROR_MAP[&err_code], err_idx))
+                Ok(res) => {
+                    match res.eval() {
+                        Ok(res) => {
+                            unsafe { LOG.push(format!("{:?}", res)); }
+                            unsafe { LOG.push("".to_string()); }
+                            Ok(res)
+                        },
+                        Err((err_code, err_idx)) => {
+                            return Err((ERROR_MAP[&err_code].to_string(), err_idx));
+                        }
+                    }
+                },
+                Err((err_code, err_idx)) => Err((ERROR_MAP[&err_code].to_string(), err_idx))
             }
         },
-        Err(errors) => {
-            for error in errors.iter() {
-                output.push(format!("\x1b[1;31mError: {}\x1b[0m", error));
-            }
+        Err(error) => {
+            return Err((error, None));
         }
     }
 }
 
-fn format_error<T: Debug>(msg: T, char_idx: Option<usize>) -> String{
-    let maybe_char_idx: String = match char_idx {
-        Some(ci) => format!(" at {}", ci),
-        None => "".to_string(),
-    };
-    return format!("\x1b[1;31mError: {:?}{}\x1b[0m", msg, maybe_char_idx);
-}
 
-fn format_result<T: Debug>(msg: T) -> String{
-    return format!("\x1b[1;32m=> {:?}\x1b[0m", msg);
-}
 
 fn op_precedence(token: TOKEN) -> u32 {
     match token {
+        TOKEN::POW(_) => 3,
         TOKEN::DIV(_) | TOKEN::MUL(_) => 2,
         TOKEN::PLUS(_) | TOKEN::MINUS(_) => 1,
         TOKEN::LPAREN(_) | TOKEN::RPAREN(_) | TOKEN::NUMBER(_, _) => 0
@@ -149,13 +146,13 @@ fn op_associative(token: TOKEN) -> Associativity {
     match token {
         TOKEN::LPAREN(_) | TOKEN::RPAREN(_) => Associativity::NOT,
         TOKEN::NUMBER(_, _) => unreachable!(),
+        TOKEN::POW(_) => Associativity::RIGHT,
         _ => Associativity::LEFT
     }
 }
 
-fn lexer(input: String) -> Result<Vec<TOKEN>, Vec<String>> {
+fn lexer(input: String) -> Result<Vec<TOKEN>, String> {
     let mut tokens: Vec<TOKEN> = Vec::new();
-    let mut errors: Vec<String> = Vec::new();
     let mut i: usize = 0;
     let mut nc: char;
     while i < input.len() {
@@ -168,6 +165,7 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, Vec<String>> {
                 '(' => tokens.push(TOKEN::LPAREN(i)),
                 ')' => tokens.push(TOKEN::RPAREN(i)),
                 '/' => tokens.push(TOKEN::DIV(i)),
+                '^' => tokens.push(TOKEN::POW(i)),
                 _ => {
                     if nc.is_digit(10) {
                         let mut number:String = String::new();
@@ -182,14 +180,15 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, Vec<String>> {
                             i += 1;
                         }
                         tokens.push(TOKEN::NUMBER(Wrapping(number.parse().unwrap()), i));
-                    } else { errors.push(format!("{}: {}", nc, ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); }
+                    } else { 
+                        return Err(format!("{}: {}", nc, ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); 
+                    }
                 }
             }
         }
         i+=1;
     }
 
-    if errors.len() > 0 { return Err(errors); }
     return Ok(tokens);
 }
 
@@ -214,7 +213,7 @@ fn shunting_yard_algorithm(tokens: Vec<TOKEN>) -> VecDeque<TOKEN> {
 
     for token in tokens {
         match token {
-            TOKEN::PLUS(_) | TOKEN::MINUS(_) | TOKEN::MUL(_) | TOKEN::DIV(_) => {
+            TOKEN::PLUS(_) | TOKEN::MINUS(_) | TOKEN::MUL(_) | TOKEN::DIV(_) | TOKEN::POW(_) => {
                 while let Some(op) = operators.last() {
                     let o1 = token.clone();
                     let o2 = op.clone();
@@ -257,7 +256,7 @@ fn generate_ast(tokens: VecDeque<TOKEN>) -> Result<ASTNode, (u32, Option<usize>)
 
     for token in tokens {
         match token {
-            TOKEN::PLUS(char_idx) | TOKEN::MINUS(char_idx) | TOKEN::MUL(char_idx) | TOKEN::DIV(char_idx) => {
+            TOKEN::PLUS(char_idx) | TOKEN::MINUS(char_idx) | TOKEN::MUL(char_idx) | TOKEN::DIV(char_idx) | TOKEN::POW(char_idx)=> {
                 let left = Box::new(match stack.pop(){
                     Some(v) => v,
                     None => { return Err((ARG_MISS_ERROR, Some(char_idx))); }

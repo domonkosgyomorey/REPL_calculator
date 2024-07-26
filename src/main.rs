@@ -1,4 +1,6 @@
 use std::io::prelude::*;
+use std::fmt::Debug;
+use std::num::Wrapping;
 mod calc;
 
 enum COMMAND {
@@ -32,23 +34,35 @@ fn get_command(input: &str) -> COMMAND {
     return COMMAND::EVAL;
 }
 
+fn format_error<T: Debug>(msg: T, char_idx: Option<usize>) -> String{
+    let maybe_char_idx: String = match char_idx {
+        Some(ci) => format!(" at {}", ci),
+        None => "".to_string(),
+    };
+    return format!("\x1b[1;31mError: {:?}{}\x1b[0m", msg, maybe_char_idx);
+}
+
+fn format_result<T: Debug>(msg: T) -> String{
+    return format!("\x1b[1;32m=> {:?}\x1b[0m", msg);
+}
+
 fn main() -> std::io::Result<()>{
-    let mut output: Vec<String> = Vec::new();
     loop {
         print!("$ ");
         std::io::stdout().flush().unwrap();
         let input: String = get_line().trim().to_string();
         match get_command(&input) {
-            COMMAND::EVAL => calc::eval(input, &mut output),
+            COMMAND::EVAL => {
+                match calc::eval(input) {
+                    Ok(res) => format_result(res),
+                    Err((err, char_idx)) => format_error(err, char_idx)
+                };
+            },
             COMMAND::HELP => print_help(),
             COMMAND::EMPTY => { continue; }
             COMMAND::QUIT => { break; }
         }
 
-        for line in output.iter() {
-            println!("{}", line);
-        }
-        output.clear();
         calc::write_log("log.txt")?;
     }
     Ok(())
