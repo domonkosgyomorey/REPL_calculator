@@ -1,5 +1,6 @@
 # Description
-A calculator app written in Rust programming language mainly for learning reason
+A calculator app written in Rust programming language mainly for learning reason<br>
+The expressin evaluation inside a parenthesis goes left to right<br>
 
 # Supported Features
 - ✅ unsigned 32 bit integer ( Overflow and Underflow are permitted due Rust Wrapping)

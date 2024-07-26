@@ -51,13 +51,7 @@ fn main() -> std::io::Result<()>{
         }
         output.clear();
 
-        let mut fp = std::fs::OpenOptions::new().write(true).truncate(true).open("log.txt")?;
-        unsafe {
-            for line in calc::LOG.iter() {
-                fp.write(line.as_bytes())?;
-                fp.write("\n".as_bytes())?;
-            }
-        }
+        calc::write_log("log.txt")?;
     }
     Ok(())
 }

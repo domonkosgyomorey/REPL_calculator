@@ -2,6 +2,7 @@ use lazy_static::lazy_static;
 use std::collections::{HashMap, VecDeque};
 use std::num::Wrapping;
 use std::str::Chars;
+use std::io::prelude::*;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 enum TOKEN {
@@ -14,7 +15,7 @@ enum TOKEN {
     NUMBER(Wrapping<u32>),
 }
 
-pub static mut LOG: Vec<String> = Vec::new();
+static mut LOG: Vec<String> = Vec::new();
 
 const UNKNOWN_TOKEN_ERROR: u32 = 1;
 const WRON_PAREN_ERROR: u32 = 2;
@@ -57,10 +58,22 @@ lazy_static! {
     };
 }
 
+pub fn write_log(file_path: &'static str) -> Result<(),std::io::Error> {
+    let mut fp = std::fs::OpenOptions::new().write(true).truncate(true).open(file_path)?;
+    unsafe {
+        for line in LOG.iter() {
+            fp.write(line.as_bytes())?;
+            fp.write("\n".as_bytes())?;
+        }
+    }
+    Ok(())
+}
+
 pub fn eval(input: String, output: &mut Vec<String>) {
-    if !is_tokens_correct(input.chars()) { output.push(format!("{}", ERROR_MAP[&WRON_PAREN_ERROR])); return; }
-    match clean_input(input) {
-        Ok(xs) => match eval_tokens(xs) {
+    if !is_parens_correct
+(input.chars()) { output.push(format!("{}", ERROR_MAP[&WRON_PAREN_ERROR])); return; }
+    match lexer(input) {
+        Ok(xs) => match parser(xs) {
             Ok(res) => {
                 match res {
                     Some(res) => output.push(format!("=> {}", res)),
@@ -77,74 +90,56 @@ pub fn eval(input: String, output: &mut Vec<String>) {
     }
 }
 
-fn clean_input(input: String) -> Result<Vec<TOKEN>, Vec<String>> {
+fn lexer(input: String) -> Result<Vec<TOKEN>, Vec<String>> {
     let mut tokens: Vec<TOKEN> = Vec::new();
     let mut errors: Vec<String> = Vec::new();
-    for c in input.chars() {
-        if c != ' ' {
-            match parse_token(c) {
-                Ok(t) => tokens.push(t),
-                Err(e) => errors.push(format!("{}: {}", c, ERROR_MAP[&e])),
-            }
-        }
-    }
-
-    if errors.len() > 0 {
-        return Err(errors);
-    }
-
-    let mut i = 0;
-    while i < tokens.len() {
-        if let TOKEN::NUMBER(d) = tokens[i] {
-            i += 1;
-            if i >= tokens.len() {
-                break;
-            }
-            let mut number: Wrapping<u32> = d;
-            while let TOKEN::NUMBER(d) = tokens[i] {
-                number = number * Wrapping(10) + d;
-                tokens.remove(i);
-                if i >= tokens.len() {
-                    break;
+    let mut i: usize = 0;
+    while i < input.len() {
+        let nc: char = input.chars().nth(i).unwrap();
+        if nc != ' ' {
+            match nc {
+                '+' => tokens.push(TOKEN::PLUS),
+                '-' => tokens.push(TOKEN::MINUS),
+                '*' => tokens.push(TOKEN::MUL),
+                '(' => tokens.push(TOKEN::LPAREN),
+                ')' => tokens.push(TOKEN::RPAREN),
+                '/' => tokens.push(TOKEN::DIV),
+                _ => {
+                    if nc.is_digit(10) {
+                        let mut number:String = String::new();
+                        number.push(nc);
+                        while i+1<input.len() && input.chars().nth(i+1).unwrap().is_digit(10) {
+                            number.push(input.chars().nth(i+1).unwrap());
+                            i += 1;
+                        }
+                        tokens.push(TOKEN::NUMBER(Wrapping(number.parse().unwrap())));
+                    } else { errors.push(format!("{}: {}", nc, ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); }
                 }
             }
-            i -= 1;
-            tokens[i] = TOKEN::NUMBER(number);
         }
-        i += 1;
+        i+=1;
     }
+
+    if errors.len() > 0 { return Err(errors); }
     return Ok(tokens);
 }
 
-fn parse_token(c: char) -> Result<TOKEN, u32> {
-    match c {
-        '+' => Ok(TOKEN::PLUS),
-        '-' => Ok(TOKEN::MINUS),
-        '*' => Ok(TOKEN::MUL),
-        '(' => Ok(TOKEN::LPAREN),
-        ')' => Ok(TOKEN::RPAREN),
-        '/' => Ok(TOKEN::DIV),
-        _ => {
-            if c.is_digit(10) {
-                Ok(TOKEN::NUMBER(Wrapping(c.to_digit(10).unwrap())))
-            } else { Err(UNKNOWN_TOKEN_ERROR) }
-        }
-    }
-}
-
-fn is_tokens_correct(chrs: Chars) -> bool {
+fn is_parens_correct(chrs: Chars) -> bool {
     let mut paren_stack: VecDeque<char> = VecDeque::new();
     for chr in chrs {
         match chr {
             '(' => paren_stack.push_back(chr),
-            ')' => {_ = paren_stack.pop_back();},
+            ')' => {
+                if paren_stack.is_empty() { return false; }
+                _ = paren_stack.pop_back();
+            },
             _ => {}
         }
     }
     return paren_stack.is_empty();
 }
 
-fn eval_tokens(mut tokens: Vec<TOKEN>) -> Result<Option<Wrapping<u32>>, u32> {
+fn parser(mut tokens: Vec<TOKEN>) -> Result<Option<Wrapping<u32>>, u32> {
     unsafe { LOG.push(format!("\nCurrent expr {:?}", tokens)); }
 
     let mut lparen_idxs: VecDeque<u32> = VecDeque::new();
@@ -165,7 +160,7 @@ fn eval_tokens(mut tokens: Vec<TOKEN>) -> Result<Option<Wrapping<u32>>, u32> {
                     let sub_expr: Vec<TOKEN> = tokens.iter().skip(idx as usize).take(i - idx as usize).cloned().collect();
                     unsafe { LOG.push(format!("Sub Expression: {:?}", sub_expr)); }
 
-                    match eval_tokens(sub_expr) {
+                    match parser(sub_expr) {
                         Ok(result) => { 
                             match result {
                                 Some(result) => tokens[(idx as usize) - 1] = TOKEN::NUMBER(result),
