@@ -6,6 +6,8 @@ The expression evaluation is follows the following precedence<br>
 
 **The parenthesis is matter!**<br>
 
+**Working with Nightly toolcahin**<br>
+
 ## Expression Solving recipe
 - Own "Input cleaner", "Tokenizer", "Lexer"<br>
 - [Shunting Yard algorithm](https://en.wikipedia.org/wiki/Shunting_yard_algorithm) for converting expression into infix form<br>
@@ -17,13 +19,13 @@ The expression evaluation is follows the following precedence<br>
 - ✅ Subtraction
 - ✅ Multiplication
 - ✅ Division (On Divided by Zero print Error)
-- ❌ Exponents
+- ✅ Exponents
 - ❌ Bool operations
 - ✅ Nice error handling
 - ✅ Logging ( Log different state of the program during the expression solving into log.txt)
 - ✅ Parentheses matter in the evaluation of the expression
 - ✅ A handy REPL
-- ❌ Automatic test
+- ✅ Automatic test
 
 ## Preview
 ![REPL preview](./previews/preview1.png)
@@ -37,6 +39,7 @@ cargo run
 ## Dependencies
 - [lazy_static](https://crates.io/crates/lazy_static)
 - [rayon](https://crates.io/crates/rayon)
+- rustup and nightly toolchain
 
 ## Tested On
 Windows
