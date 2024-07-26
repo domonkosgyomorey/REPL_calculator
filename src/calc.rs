@@ -1,35 +1,70 @@
 use lazy_static::lazy_static;
 use std::collections::{HashMap, VecDeque};
+use std::fmt::Debug;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::num::Wrapping;
 use std::str::Chars;
-use std::io::prelude::*;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 enum TOKEN {
-    PLUS,
-    MINUS,
-    MUL,
-    DIV,
-    LPAREN,
-    RPAREN,
-    NUMBER(Wrapping<u32>),
+    PLUS(usize),
+    MINUS(usize),
+    MUL(usize),
+    DIV(usize),
+    LPAREN(usize),
+    RPAREN(usize),
+    NUMBER(Wrapping<u32>, usize),
 }
 
-static mut LOG: Vec<String> = Vec::new();
+#[derive(Debug, Clone)]
+enum ASTNode {
+    Number(Wrapping<u32>),
+    Operator { op: TOKEN, left: Box<ASTNode>, right: Box<ASTNode>}
+}
+
+#[derive(PartialEq)]
+enum Associativity {
+    LEFT,
+    NOT,
+}
+
+impl ASTNode {
+    fn eval(&self) -> Result<Wrapping<u32>, (u32, Option<usize>)> {
+        match self {
+            ASTNode::Number(val) => Ok(*val),
+            ASTNode::Operator { op, left, right } => {
+                let (maybe_left_val, maybe_right_val): (Result<Wrapping<u32>, (u32, Option<usize>)>, Result<Wrapping<u32>, (u32, Option<usize>)>) = rayon::join(|| left.eval(), || right.eval());
+                let lval = match maybe_left_val {
+                    Err(err_code) => { return Err(err_code); },
+                    Ok(v) => v
+                };
+                let rval = match maybe_right_val {
+                    Err(err_code) => { return Err(err_code); },
+                    Ok(v) => v
+                };
+                match op {
+                    TOKEN::PLUS(_) => Ok(lval + rval),
+                    TOKEN::MINUS(_) => Ok(lval - rval),
+                    TOKEN::MUL(_) => Ok(lval * rval),
+                    TOKEN::DIV(char_idx) => {
+                        if rval == Wrapping(0) { return Err((DIVIDE_BY_ZERO_ERROR, Some(*char_idx))); }
+                        return Ok(lval / rval);
+                    },
+                    _ => unreachable!(),
+                }
+            }
+        }
+    }
+}
+
+static mut LOG:Vec<String> = Vec::new();
 
 const UNKNOWN_TOKEN_ERROR: u32 = 1;
 const WRON_PAREN_ERROR: u32 = 2;
 const DIVIDE_BY_ZERO_ERROR: u32 = 3;
 const NO_RESULT_ERROR:u32 = 4;
-
-const SEPCIFIC_ERROR_START:u32 = 5;
-// In this case this is 2 because LEFT and RIGHT arg missing
-const SPECIFIC_ERRORS_FIELD_LEN:u32 = 2;
-
-const ADD_ERROR_OFFSET: u32 = SEPCIFIC_ERROR_START;
-const SUB_ERROR_OFFSET: u32 = SEPCIFIC_ERROR_START+SPECIFIC_ERRORS_FIELD_LEN;
-const LEFT_ARG_MISS_ERROR_IDX: u32 = 0;
-const RIGHT_ARG_MISS_ERROR_IDX: u32 = 1;
+const ARG_MISS_ERROR:u32 = 9;
 
 lazy_static! {
     static ref ERROR_MAP: HashMap<u32, &'static str> = {
@@ -39,27 +74,18 @@ lazy_static! {
         m.insert(DIVIDE_BY_ZERO_ERROR, "Divided by zero");
         m.insert(NO_RESULT_ERROR, "No Result");
 
-        // Add offset
-        m.insert(ADD_ERROR_OFFSET+LEFT_ARG_MISS_ERROR_IDX, "Left argument is missing at an addition");
-        m.insert(ADD_ERROR_OFFSET+RIGHT_ARG_MISS_ERROR_IDX, "Right argument is missing at an addition");
-
-        // Sub offset
-        m.insert(SUB_ERROR_OFFSET+LEFT_ARG_MISS_ERROR_IDX, "Left argument is missing at a subtraction");
-        m.insert(SUB_ERROR_OFFSET+RIGHT_ARG_MISS_ERROR_IDX, "Right argument is missing at an subtraction");
-
-        return m;
-    };
-
-    static ref TOKEN_TO_ERROR_OFFSET: HashMap<TOKEN, u32> = {
-        let mut m = HashMap::new();
-        m.insert(TOKEN::PLUS, ADD_ERROR_OFFSET);
-        m.insert(TOKEN::MINUS, SUB_ERROR_OFFSET);
+        m.insert(ARG_MISS_ERROR, "Argumentum is missing");
         return m;
     };
 }
 
-pub fn write_log(file_path: &'static str) -> Result<(),std::io::Error> {
-    let mut fp = std::fs::OpenOptions::new().write(true).create(true).truncate(true).open(file_path)?;
+pub fn write_log(file_path: &'static str) -> Result<(), std::io::Error>{
+    let mut fp = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(file_path)?;
+
     unsafe {
         for line in LOG.iter() {
             fp.write(line.as_bytes())?;
@@ -71,22 +97,59 @@ pub fn write_log(file_path: &'static str) -> Result<(),std::io::Error> {
 
 pub fn eval(input: String, output: &mut Vec<String>) {
     if !is_parens_correct
-(input.chars()) { output.push(format!("\x1b[1;31m{}\x1b[0m", ERROR_MAP[&WRON_PAREN_ERROR])); return; }
+(input.chars()) { output.push(format_error(ERROR_MAP[&WRON_PAREN_ERROR], None)); return; }
     match lexer(input) {
-        Ok(xs) => match parser(xs) {
-            Ok(res) => {
-                match res {
-                    Some(res) => output.push(format!("\x1b[1;32m=> {}\x1b[0m", res)),
-                    None => output.push(format!("\x1b[1;No Result\x1b[0m"))
-                }
+        Ok(tokens) => {
+            unsafe { LOG.push(format!("Tokens {:?}", tokens)); }
+            let infixed_tokens = shunting_yard_algorithm(tokens.clone());
+            unsafe { LOG.push(format!("Infixed syntax {:?}", infixed_tokens)); }
+            let expression_tree = generate_ast(infixed_tokens);
+            unsafe { LOG.push(format!("Expression tree {:?}", expression_tree)); }
+            match expression_tree {
+                Ok(res) => output.push(match res.eval() {
+                    Ok(res) => {
+                        unsafe { LOG.push(format!("{:?}", res)); }
+                        unsafe { LOG.push("".to_string()); }
+                        format_result(res)
+                    },
+                    Err((err_code, err_idx)) => format_error(ERROR_MAP[&err_code], err_idx)
+                }),
+                Err((err_code, err_idx)) => output.push(format_error(ERROR_MAP[&err_code], err_idx))
             }
-            Err(error_code) => output.push(format!("\x1b[1;31mError: {}\x1b[0m", ERROR_MAP[&error_code])),
         },
         Err(errors) => {
             for error in errors.iter() {
                 output.push(format!("\x1b[1;31mError: {}\x1b[0m", error));
             }
         }
+    }
+}
+
+fn format_error<T: Debug>(msg: T, char_idx: Option<usize>) -> String{
+    let maybe_char_idx: String = match char_idx {
+        Some(ci) => format!(" at {}", ci),
+        None => "".to_string(),
+    };
+    return format!("\x1b[1;31mError: {:?}{}\x1b[0m", msg, maybe_char_idx);
+}
+
+fn format_result<T: Debug>(msg: T) -> String{
+    return format!("\x1b[1;32m=> {:?}\x1b[0m", msg);
+}
+
+fn op_precedence(token: TOKEN) -> u32 {
+    match token {
+        TOKEN::DIV(_) | TOKEN::MUL(_) => 2,
+        TOKEN::PLUS(_) | TOKEN::MINUS(_) => 1,
+        TOKEN::LPAREN(_) | TOKEN::RPAREN(_) | TOKEN::NUMBER(_, _) => 0
+    }
+}
+
+fn op_associative(token: TOKEN) -> Associativity {
+    match token {
+        TOKEN::LPAREN(_) | TOKEN::RPAREN(_) => Associativity::NOT,
+        TOKEN::NUMBER(_, _) => unreachable!(),
+        _ => Associativity::LEFT
     }
 }
 
@@ -99,12 +162,12 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, Vec<String>> {
         nc = input.chars().nth(i).unwrap();
         if nc != ' ' {
             match nc {
-                '+' => tokens.push(TOKEN::PLUS),
-                '-' => tokens.push(TOKEN::MINUS),
-                '*' => tokens.push(TOKEN::MUL),
-                '(' => tokens.push(TOKEN::LPAREN),
-                ')' => tokens.push(TOKEN::RPAREN),
-                '/' => tokens.push(TOKEN::DIV),
+                '+' => tokens.push(TOKEN::PLUS(i)),
+                '-' => tokens.push(TOKEN::MINUS(i)),
+                '*' => tokens.push(TOKEN::MUL(i)),
+                '(' => tokens.push(TOKEN::LPAREN(i)),
+                ')' => tokens.push(TOKEN::RPAREN(i)),
+                '/' => tokens.push(TOKEN::DIV(i)),
                 _ => {
                     if nc.is_digit(10) {
                         let mut number:String = String::new();
@@ -118,7 +181,7 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, Vec<String>> {
                             }
                             i += 1;
                         }
-                        tokens.push(TOKEN::NUMBER(Wrapping(number.parse().unwrap())));
+                        tokens.push(TOKEN::NUMBER(Wrapping(number.parse().unwrap()), i));
                     } else { errors.push(format!("{}: {}", nc, ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); }
                 }
             }
@@ -145,128 +208,74 @@ fn is_parens_correct(chrs: Chars) -> bool {
     return paren_stack.is_empty();
 }
 
-fn parser(mut tokens: Vec<TOKEN>) -> Result<Option<Wrapping<u32>>, u32> {
-    unsafe { LOG.push(format!("\nCurrent expr {:?}", tokens)); }
+fn shunting_yard_algorithm(tokens: Vec<TOKEN>) -> VecDeque<TOKEN> {
+    let mut output: VecDeque<TOKEN> = VecDeque::new();
+    let mut operators: Vec<TOKEN> = Vec::new();
 
-    let mut lparen_idxs: VecDeque<u32> = VecDeque::new();
-    let mut prev_token: Option<TOKEN> = None;
-
-    // paren check
-    let mut i = 0;
-    while i < tokens.len() {
-        unsafe { LOG.push(format!("In Parenthesis loop {:?} at {}", tokens[i], i)); }
-        match tokens[i] {
-            TOKEN::LPAREN => lparen_idxs.push_back(i as u32),
-            TOKEN::RPAREN => {
-                if lparen_idxs.is_empty() {
-                    return Err(WRON_PAREN_ERROR);
-                } else {
-                    let idx: u32 = lparen_idxs.pop_back().unwrap() + 1;
-                    // evaluate inside arithmetic because we found the parenthesis around them
-                    let sub_expr: Vec<TOKEN> = tokens.iter().skip(idx as usize).take(i - idx as usize).cloned().collect();
-                    unsafe { LOG.push(format!("Sub Expression: {:?}", sub_expr)); }
-
-                    match parser(sub_expr) {
-                        Ok(result) => { 
-                            match result {
-                                Some(result) => tokens[(idx as usize) - 1] = TOKEN::NUMBER(result),
-                                None => { return Err(NO_RESULT_ERROR); }
-                            }
-                        }
-                        Err(msg) => { return Err(msg); }
+    for token in tokens {
+        match token {
+            TOKEN::PLUS(_) | TOKEN::MINUS(_) | TOKEN::MUL(_) | TOKEN::DIV(_) => {
+                while let Some(op) = operators.last() {
+                    let o1 = token.clone();
+                    let o2 = op.clone();
+                    if let TOKEN::LPAREN(_) = o2 {
+                        break;
                     }
-                    unsafe { LOG.push(format!("Sub Expression Result: {:?}", tokens)); }
-
-                    let mut j: usize = i;
-                    while j >= idx as usize {
-                        unsafe { LOG.push(format!("Token Deleted: {:?} at {}", tokens[j], j)); }
-                        tokens.remove(j);
-                        j -= 1;
+                    if op_precedence(o2.clone()) > op_precedence(o1.clone()) ||
+                        (op_precedence(o1.clone()) == op_precedence(o2.clone()) && op_associative(o1) == Associativity::LEFT){
+                            output.push_back(operators.pop().unwrap());
+                    }else{
+                        break;
                     }
-
-                    unsafe { LOG.push(format!("AFTER DELETE: {:?}\n", tokens)); }
-
-                    i = 0;
-                    lparen_idxs = VecDeque::new();
-                    continue;
                 }
-            }
-            // I did this because its easier to remember to add new branch
-            TOKEN::MINUS | TOKEN::MUL | TOKEN::NUMBER(_) | TOKEN::PLUS | TOKEN::DIV => {}
-        };
-        i += 1;
-    }
-    i = 0;
-    while i < tokens.len() {
-        unsafe { LOG.push(format!("In Arithmetic loop {:?} at {}", tokens[i], i)); }
-        if let Err(error_code) = match tokens[i] {
-            TOKEN::PLUS => exec_bin_op(&mut tokens, &mut i, prev_token, |l, r| Ok(l + r)),
-            TOKEN::MINUS => exec_bin_op(&mut tokens, &mut i, prev_token, |l, r| Ok(l - r)),
-            TOKEN::MUL => exec_bin_op(&mut tokens, &mut i, prev_token, |l, r| Ok(l * r)),
-            TOKEN::DIV => exec_bin_op(&mut tokens, &mut i, prev_token, |l, r| {
-                if r.0 == 0 {
-                    return Err(DIVIDE_BY_ZERO_ERROR);
+                operators.push(token);
+            },
+            TOKEN::LPAREN(_) => operators.push(token),
+            TOKEN::RPAREN(_) => {
+                while let Some(op) = operators.last() {
+                    if let TOKEN::LPAREN(_) = *op { 
+                        operators.pop();
+                        break;
+                    }
+                    output.push_back(operators.pop().unwrap());
                 }
-                Ok(l / r)
-            }),
-            // I did this because its easier to remember to add new branch
-            TOKEN::LPAREN | TOKEN::RPAREN | TOKEN::NUMBER(_) => Ok(()),
-        } { return Err(error_code); };
-
-        prev_token = Some(tokens[i].clone());
-        i += 1;
-    }
-    if tokens.len() == 0 {
-        return Ok(None);
-    } else if let TOKEN::NUMBER(d) = tokens[0] {
-        unsafe {
-            LOG.push(format!("Result: {:?}", tokens));
+            },
+            TOKEN::NUMBER(_, _) => output.push_back(token)
         }
-        return Ok(Some(d));
     }
-    unreachable!()
+
+    while let Some(op) = operators.pop() {
+        output.push_back(op);
+    }
+
+    return output;
+    
 }
 
-fn return_numbers_for_bin_op( prev_token: Option<TOKEN>, next_token: TOKEN, operation: TOKEN) -> Result<[Wrapping<u32>; 2], u32> {
-    let mut result: [Wrapping<u32>; 2] = [Wrapping(0); 2];
-    match prev_token {
-        Some(TOKEN::NUMBER(num)) => { result[0] = num; }
-        _ => { return Err(TOKEN_TO_ERROR_OFFSET[&operation] + LEFT_ARG_MISS_ERROR_IDX); }
-    }
-    match next_token {
-        TOKEN::NUMBER(num) => { result[1] = num; }
-        _ => { return Err(TOKEN_TO_ERROR_OFFSET[&operation] + RIGHT_ARG_MISS_ERROR_IDX); }
-    }
+fn generate_ast(tokens: VecDeque<TOKEN>) -> Result<ASTNode, (u32, Option<usize>)> {
+    let mut stack: Vec<ASTNode> = Vec::new();
 
-    return Ok(result);
-}
-
-fn exec_bin_op(tokens: &mut Vec<TOKEN>, idx: &mut usize, prev_token: Option<TOKEN>, func: fn(Wrapping<u32>, Wrapping<u32>) -> Result<Wrapping<u32>, u32>,) -> Result<(), u32> {
-    let operation: TOKEN = tokens[*idx].clone();
-    if (*idx) + 1 < tokens.len() {
-        match return_numbers_for_bin_op(prev_token, tokens[(*idx) + 1].clone(), operation) {
-            Ok([left, right]) => {
-                match func(left, right) {
-                    Ok(result) => {
-                        tokens[(*idx) - 1] = TOKEN::NUMBER(result);
-                    }
-                    Err(error_code) => {
-                        return Err(error_code);
-                    }
-                }
-
-                tokens.remove(*(idx) + 1);
-                tokens.remove(*idx);
-
-                // because end of the loop we increase i and we are on i-1
-                *idx -= 1;
-                Ok(())
-            }
-            Err(error_code) => {
-                return Err(error_code);
-            }
+    for token in tokens {
+        match token {
+            TOKEN::PLUS(char_idx) | TOKEN::MINUS(char_idx) | TOKEN::MUL(char_idx) | TOKEN::DIV(char_idx) => {
+                let left = Box::new(match stack.pop(){
+                    Some(v) => v,
+                    None => { return Err((ARG_MISS_ERROR, Some(char_idx))); }
+                });
+                let right = Box::new(match stack.pop() {
+                    Some(v) => v,
+                    None => { return Err((ARG_MISS_ERROR, Some(char_idx))); }
+                });
+                stack.push(ASTNode::Operator { op: token, left: right, right: left })
+            },
+            TOKEN::NUMBER(num, _) => {
+                stack.push(ASTNode::Number(num));
+            },
+            _ => {}
         }
-    } else {
-        return Err(TOKEN_TO_ERROR_OFFSET[&operation] + RIGHT_ARG_MISS_ERROR_IDX);
     }
+    return Ok(match stack.pop(){
+        Some(v) => v,
+        None => { return Err((NO_RESULT_ERROR, None)); }
+    });
 }

@@ -35,7 +35,6 @@ fn get_command(input: &str) -> COMMAND {
 fn main() -> std::io::Result<()>{
     let mut output: Vec<String> = Vec::new();
     loop {
-
         print!("$ ");
         std::io::stdout().flush().unwrap();
         let input: String = get_line().trim().to_string();
@@ -50,7 +49,6 @@ fn main() -> std::io::Result<()>{
             println!("{}", line);
         }
         output.clear();
-
         calc::write_log("log.txt")?;
     }
     Ok(())
