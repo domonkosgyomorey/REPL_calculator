@@ -1,6 +1,5 @@
 use std::io::prelude::*;
 use std::fmt::Debug;
-use std::num::Wrapping;
 mod calc;
 
 enum COMMAND {

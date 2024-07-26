@@ -6,6 +6,10 @@ use std::io::Write;
 use std::num::Wrapping;
 use std::str::Chars;
 
+type ErrorMsg = (String, Option<usize>);
+type ErrorCode = (u32, Option<usize>);
+type CalcNumber = Wrapping<u32>;
+
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 enum TOKEN {
     PLUS(usize),
@@ -15,12 +19,12 @@ enum TOKEN {
     POW(usize),
     LPAREN(usize),
     RPAREN(usize),
-    NUMBER(Wrapping<u32>, usize),
+    NUMBER(CalcNumber, usize),
 }
 
 #[derive(Debug, Clone)]
 enum ASTNode {
-    Number(Wrapping<u32>),
+    Number(CalcNumber),
     Operator { op: TOKEN, left: Box<ASTNode>, right: Box<ASTNode>}
 }
 
@@ -32,11 +36,11 @@ enum Associativity {
 }
 
 impl ASTNode {
-    fn eval(&self) -> Result<Wrapping<u32>, (u32, Option<usize>)> {
+    fn eval(&self) -> Result<CalcNumber, ErrorCode> {
         match self {
             ASTNode::Number(val) => Ok(*val),
             ASTNode::Operator { op, left, right } => {
-                let (maybe_left_val, maybe_right_val): (Result<Wrapping<u32>, (u32, Option<usize>)>, Result<Wrapping<u32>, (u32, Option<usize>)>) = rayon::join(|| left.eval(), || right.eval());
+                let (maybe_left_val, maybe_right_val): (Result<CalcNumber, ErrorCode>, Result<CalcNumber, ErrorCode>) = rayon::join(|| left.eval(), || right.eval());
                 let lval = match maybe_left_val {
                     Err(err_code) => { return Err(err_code); },
                     Ok(v) => v
@@ -98,7 +102,7 @@ pub fn write_log(file_path: &'static str) -> Result<(), std::io::Error>{
     Ok(())
 }
 
-pub fn eval(input: String) -> Result<Wrapping<u32>, (String, Option<usize>)>{
+pub fn eval(input: String) -> Result<CalcNumber, ErrorMsg>{
     if !is_parens_correct(input.chars()) { 
         return Err((ERROR_MAP[&WRON_PAREN_ERROR].to_string(), None));
     }
@@ -251,7 +255,7 @@ fn shunting_yard_algorithm(tokens: Vec<TOKEN>) -> VecDeque<TOKEN> {
     
 }
 
-fn generate_ast(tokens: VecDeque<TOKEN>) -> Result<ASTNode, (u32, Option<usize>)> {
+fn generate_ast(tokens: VecDeque<TOKEN>) -> Result<ASTNode, ErrorCode> {
     let mut stack: Vec<ASTNode> = Vec::new();
 
     for token in tokens {
