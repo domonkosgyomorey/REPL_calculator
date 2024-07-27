@@ -97,22 +97,22 @@ fn div_test_4(){
 
 #[test]
 fn pow_test_1(){
-    assert_eq!(8, calc::eval("2 ^(3)".to_string()).unwrap().0);
+    assert_eq!(8, calc::eval("2 **(3)".to_string()).unwrap().0);
 }
 
 #[test]
 fn pow_test_2(){
-    assert_eq!(1, calc::eval("(((19128736)) ^(0))".to_string()).unwrap().0);
+    assert_eq!(1, calc::eval("(((19128736)) **(0))".to_string()).unwrap().0);
 }
 
 #[test]
 fn pow_test_3(){
-    assert_eq!(268435456, calc::eval("16 ^7".to_string()).unwrap().0);
+    assert_eq!(268435456, calc::eval("16 **7".to_string()).unwrap().0);
 }
 
 #[test]
 fn pow_test_4(){
-    assert_eq!(1, calc::eval("1 ^839274".to_string()).unwrap().0);
+    assert_eq!(1, calc::eval("1 **839274".to_string()).unwrap().0);
 }
 
 #[test]
@@ -156,6 +156,316 @@ fn sqrt_test_4(){
 }
 
 #[test]
+fn and_test_1(){
+    assert_eq!(0, calc::eval("124&&0".to_string()).unwrap().0);
+}
+
+#[test]
+fn and_test_2(){
+    assert_eq!(0, calc::eval("0&&2313".to_string()).unwrap().0);
+}
+
+#[test]
+fn and_test_3(){
+    assert_eq!(0, calc::eval("0&&0".to_string()).unwrap().0);
+}
+
+#[test]
+fn and_test_4(){
+    assert_eq!(1, calc::eval("124&&929842".to_string()).unwrap().0);
+}
+
+#[test]
+fn and_test_5(){
+    assert_eq!(0, calc::eval("124&&929842&&0".to_string()).unwrap().0);
+}
+
+#[test]
+fn or_test_1(){
+    assert_eq!(1, calc::eval("124||0".to_string()).unwrap().0);
+}
+
+#[test]
+fn or_test_2(){
+    assert_eq!(1, calc::eval("0||2313".to_string()).unwrap().0);
+}
+
+#[test]
+fn or_test_3(){
+    assert_eq!(0, calc::eval("0||0".to_string()).unwrap().0);
+}
+
+#[test]
+fn or_test_4(){
+    assert_eq!(1, calc::eval("124||929842".to_string()).unwrap().0);
+}
+
+#[test]
+fn or_test_5(){
+    assert_eq!(1, calc::eval("124||929842||0".to_string()).unwrap().0);
+}
+
+#[test]
+fn xor_test_1(){
+    assert_eq!(1, calc::eval("124^^0".to_string()).unwrap().0);
+}
+
+#[test]
+fn xor_test_2(){
+    assert_eq!(1, calc::eval("0^^2313".to_string()).unwrap().0);
+}
+
+#[test]
+fn xor_test_3(){
+    assert_eq!(0, calc::eval("0^^0".to_string()).unwrap().0);
+}
+
+#[test]
+fn xor_test_4(){
+    assert_eq!(0, calc::eval("124^^929842".to_string()).unwrap().0);
+}
+
+#[test]
+fn xor_test_5(){
+    assert_eq!(0, calc::eval("124^^929842^^0".to_string()).unwrap().0);
+}
+
+#[test]
+fn band_test_1(){
+    assert_eq!(0, calc::eval("124&0".to_string()).unwrap().0);
+}
+
+#[test]
+fn band_test_2(){
+    assert_eq!(1, calc::eval("5&3".to_string()).unwrap().0);
+}
+
+#[test]
+fn band_test_3(){
+    assert_eq!(0, calc::eval("0&0".to_string()).unwrap().0);
+}
+
+#[test]
+fn band_test_4(){
+    assert_eq!(4145, calc::eval("12345&54321".to_string()).unwrap().0);
+}
+
+#[test]
+fn band_test_5(){
+    assert_eq!(0, calc::eval("124&929842&0".to_string()).unwrap().0);
+}
+
+#[test]
+fn bor_test_1(){
+    assert_eq!(124, calc::eval("124|0".to_string()).unwrap().0);
+}
+
+#[test]
+fn bor_test_2(){
+    assert_eq!(7, calc::eval("5|3".to_string()).unwrap().0);
+}
+
+#[test]
+fn bor_test_3(){
+    assert_eq!(0, calc::eval("0|0".to_string()).unwrap().0);
+}
+
+#[test]
+fn bor_test_4(){
+    assert_eq!(62521, calc::eval("12345|54321".to_string()).unwrap().0);
+}
+
+#[test]
+fn bor_test_5(){
+    assert_eq!(13, calc::eval("1|8|4".to_string()).unwrap().0);
+}
+
+#[test]
+fn bxor_test_1(){
+    assert_eq!(124, calc::eval("124^0".to_string()).unwrap().0);
+}
+
+#[test]
+fn bxor_test_2(){
+    assert_eq!(6, calc::eval("5^3".to_string()).unwrap().0);
+}
+
+#[test]
+fn bxor_test_3(){
+    assert_eq!(0, calc::eval("0^0".to_string()).unwrap().0);
+}
+
+#[test]
+fn bxor_test_4(){
+    assert_eq!(58376, calc::eval("12345^54321".to_string()).unwrap().0);
+}
+
+#[test]
+fn bxor_test_5(){
+    assert_eq!(0, calc::eval("30^20^10".to_string()).unwrap().0);
+}
+
+#[test]
+fn mod_test_1(){
+    assert_eq!(0, calc::eval("10%1".to_string()).unwrap().0);
+}
+
+#[test]
+fn mod_test_2(){
+    assert_eq!(0, calc::eval("10%5".to_string()).unwrap().0);
+}
+
+#[test]
+fn mod_test_3(){
+    assert_eq!(3, calc::eval("3%4".to_string()).unwrap().0);
+}
+
+#[test]
+fn mod_test_4(){
+    assert_eq!(1, calc::eval("4%3%2".to_string()).unwrap().0);
+}
+
+#[test]
+fn equals_test_1(){
+    assert_eq!(1, calc::eval("0==0".to_string()).unwrap().0);
+}
+
+#[test]
+fn equals_test_2(){
+    assert_eq!(0, calc::eval("1==0".to_string()).unwrap().0);
+}
+
+#[test]
+fn equals_test_3(){
+    assert_eq!(0, calc::eval("1000==29634".to_string()).unwrap().0);
+}
+
+#[test]
+fn equals_test_4(){
+    assert_eq!(1, calc::eval("1000==29634==0".to_string()).unwrap().0);
+}
+
+#[test]
+fn not_test_1(){
+    assert_eq!(0, calc::eval("n3".to_string()).unwrap().0);
+}
+
+#[test]
+fn not_test_2(){
+    assert_eq!(1, calc::eval("n0".to_string()).unwrap().0);
+}
+
+#[test]
+fn not_test_3(){
+    assert_eq!(0, calc::eval("n987343".to_string()).unwrap().0);
+}
+
+#[test]
+fn not_test_4(){
+    assert_eq!(1, calc::eval("nn987343".to_string()).unwrap().0);
+}
+
+#[test]
+fn gt_test_1(){
+    assert_eq!(1, calc::eval("3>1".to_string()).unwrap().0);
+}
+
+#[test]
+fn gt_test_2(){
+    assert_eq!(0, calc::eval("4>5".to_string()).unwrap().0);
+}
+
+#[test]
+fn gt_test_3(){
+    assert_eq!(0, calc::eval("4>4".to_string()).unwrap().0);
+}
+
+#[test]
+fn gt_test_4(){
+    assert_eq!(1, calc::eval("4>3>0".to_string()).unwrap().0);
+}
+
+#[test]
+fn ge_test_1(){
+    assert_eq!(1, calc::eval("3>=1".to_string()).unwrap().0);
+}
+
+#[test]
+fn ge_test_2(){
+    assert_eq!(0, calc::eval("4>=5".to_string()).unwrap().0);
+}
+
+#[test]
+fn ge_test_3(){
+    assert_eq!(1, calc::eval("4>=4".to_string()).unwrap().0);
+}
+
+#[test]
+fn ge_test_4(){
+    assert_eq!(1, calc::eval("4>=4>=1>=1>=0".to_string()).unwrap().0);
+}
+
+#[test]
+fn lt_test_1(){
+    assert_eq!(0, calc::eval("3<1".to_string()).unwrap().0);
+}
+
+#[test]
+fn lt_test_2(){
+    assert_eq!(1, calc::eval("4<5".to_string()).unwrap().0);
+}
+
+#[test]
+fn lt_test_3(){
+    assert_eq!(0, calc::eval("4<4".to_string()).unwrap().0);
+}
+
+#[test]
+fn lt_test_4(){
+    assert_eq!(1, calc::eval("1<2<2<2<2".to_string()).unwrap().0);
+}
+
+#[test]
+fn le_test_1(){
+    assert_eq!(0, calc::eval("3<=1".to_string()).unwrap().0);
+}
+
+#[test]
+fn le_test_2(){
+    assert_eq!(1, calc::eval("4<=5".to_string()).unwrap().0);
+}
+
+#[test]
+fn le_test_3(){
+    assert_eq!(1, calc::eval("4<=4".to_string()).unwrap().0);
+}
+
+#[test]
+fn le_test_4(){
+    assert_eq!(1, calc::eval("2<=2<=1<=1<=1".to_string()).unwrap().0);
+}
+
+#[test]
+fn ne_test_1(){
+    assert_eq!(1, calc::eval("3n=1".to_string()).unwrap().0);
+}
+
+#[test]
+fn ne_test_2(){
+    assert_eq!(1, calc::eval("4n=5".to_string()).unwrap().0);
+}
+
+#[test]
+fn ne_test_3(){
+    assert_eq!(0, calc::eval("4n=4".to_string()).unwrap().0);
+}
+
+#[test]
+fn ne_test_4(){
+    assert_eq!(0, calc::eval("2n=2n=4n=1".to_string()).unwrap().0);
+}
+
+#[test]
 fn precedence_test(){
     assert_eq!(16, calc::eval("5*3+10-18/2".to_string()).unwrap().0);
 }
@@ -172,22 +482,27 @@ fn parenthesis_test_2(){
 
 #[test]
 fn parenthesis_test_3(){
-    assert_eq!(1, calc::eval("(((2))^3)/((4)+2*(200/(2^6+8*4)))".to_string()).unwrap().0);
+    assert_eq!(1, calc::eval("(((2))**3)/((4)+2*(200/(2**6+8*4)))".to_string()).unwrap().0);
 }
 
 #[test]
 fn expr_test_1(){
-    assert_eq!(4, calc::eval("(((2))^3)/((4)+2*(200/(2^6+8*4)))+(((2))^3)/((4)+2*(200/(2^6+8*4)))+(((2))^3)/((4)+2*(200/(2^6+8*4)))+(((2))^3)/((4)+2*(200/(2^6+8*4)))".to_string()).unwrap().0);
+    assert_eq!(4, calc::eval("(((2))**3)/((4)+2*(200/(2**6+8*4)))+(((2))**3)/((4)+2*(200/(2**6+8*4)))+(((2))**3)/((4)+2*(200/(2**6+8*4)))+(((2))**3)/((4)+2*(200/(2**6+8*4)))".to_string()).unwrap().0);
 }
 
 #[test]
 fn expr_test_2(){
-    assert_eq!(164531, calc::eval("(1+2+3+4+5)^4*13/4".to_string()).unwrap().0);
+    assert_eq!(164531, calc::eval("(1+2+3+4+5)**4*13/4".to_string()).unwrap().0);
 }
 
 #[test]
 fn expr_test_3(){
-    assert_eq!(1, calc::eval("(ss160 000*3+4)/8^2!".to_string()).unwrap().0);
+    assert_eq!(1, calc::eval("(ss160 000*3+4)/8**2!".to_string()).unwrap().0);
+}
+
+#[test]
+fn expr_test_4(){
+    assert_eq!(1, calc::eval("3*1-3+2 n= s16/2!-(6&3) && s(2**3*50)>=19".to_string()).unwrap().0);
 }
 
 #[test]

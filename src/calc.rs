@@ -19,6 +19,23 @@ enum TOKEN {
     POW(usize),
     FACT(usize),
     SQRT(usize),
+    MOD(usize),
+
+    EQUAL(usize),
+    NOT(usize),
+    GT(usize),
+    GE(usize),
+    LT(usize),
+    LE(usize),
+    NEQUAL(usize),
+    AND(usize),
+    OR(usize),
+    XOR(usize),
+
+    BAND(usize),
+    BOR(usize),
+    BXOR(usize),
+
     LPAREN(usize),
     RPAREN(usize),
     NUMBER(CalcNumber, usize),
@@ -62,6 +79,22 @@ impl ASTNode {
                         return Ok(lval / rval);
                     },
                     TOKEN::POW(_) => Ok(Wrapping(lval.0.wrapping_pow(rval.0))),
+                    TOKEN::MOD(char_idx) => {
+                        if rval.0 == 0 { return Err((DIVIDE_BY_ZERO_ERROR, Some(*char_idx))); }
+                        return Ok(Wrapping(lval.0%rval.0));
+                    },
+                    TOKEN::AND(_) => Ok(to_calc_num(to_bool(lval) && to_bool(rval))),
+                    TOKEN::OR(_) => Ok(to_calc_num(to_bool(lval) || to_bool(rval))),
+                    TOKEN::XOR(_) => Ok(to_calc_num(to_bool(lval)^to_bool(rval))),
+                    TOKEN::BOR(_) => Ok(lval|rval),
+                    TOKEN::BAND(_) => Ok(lval&rval),
+                    TOKEN::BXOR(_) => Ok(lval^rval),
+                    TOKEN::EQUAL(_) => Ok(to_calc_num(lval==rval)),
+                    TOKEN::GT(_) => Ok(to_calc_num(lval>rval)),
+                    TOKEN::GE(_) => Ok(to_calc_num(lval>=rval)),
+                    TOKEN::LT(_) => Ok(to_calc_num(lval<rval)),
+                    TOKEN::LE(_) => Ok(to_calc_num(lval<=rval)),
+                    TOKEN::NEQUAL(_) => Ok(to_calc_num(lval!=rval)),
                     _ => unreachable!(),
                 }
             },
@@ -84,6 +117,7 @@ impl ASTNode {
                 };
                 match op {
                     TOKEN::SQRT(_) => Ok(Wrapping(f64::from(rval.0).sqrt() as u32)),
+                    TOKEN::NOT(_) => Ok(to_calc_num(!to_bool(rval))),
                     _ => unreachable!()
                 }
             }
@@ -165,10 +199,14 @@ pub fn eval(input: String) -> Result<CalcNumber, ErrorMsg>{
 
 fn op_precedence(token: TOKEN) -> u32 {
     match token {
-        TOKEN::FACT(_) => 4,
-        TOKEN::POW(_) | TOKEN::SQRT(_) => 3,
-        TOKEN::DIV(_) | TOKEN::MUL(_) => 2,
-        TOKEN::PLUS(_) | TOKEN::MINUS(_) => 1,
+        TOKEN::FACT(_) => 7,
+        TOKEN::POW(_) | TOKEN::SQRT(_) => 6,
+        TOKEN::DIV(_) | TOKEN::MUL(_) | TOKEN::MOD(_) => 5,
+        TOKEN::PLUS(_) | TOKEN::MINUS(_) => 4,
+        TOKEN::EQUAL(_) | TOKEN::NOT(_) | TOKEN::NEQUAL(_) |
+        TOKEN::GT(_) | TOKEN::GE(_) | TOKEN::LT(_) | TOKEN::LE(_) => 3,
+        TOKEN::AND(_) | TOKEN::BAND(_) => 2,
+        TOKEN::OR(_) | TOKEN::BOR(_) | TOKEN::XOR(_) | TOKEN::BXOR(_) => 1,
         TOKEN::LPAREN(_) | TOKEN::RPAREN(_) | TOKEN::NUMBER(_, _) => 0
     }
 }
@@ -177,7 +215,7 @@ fn op_associative(token: TOKEN) -> Associativity {
     match token {
         TOKEN::LPAREN(_) | TOKEN::RPAREN(_) => Associativity::NOT,
         TOKEN::NUMBER(_, _) => unreachable!(),
-        TOKEN::POW(_) | TOKEN::SQRT(_) => Associativity::RIGHT,
+        TOKEN::POW(_) | TOKEN::SQRT(_) | TOKEN::NOT(_) => Associativity::RIGHT,
         _ => Associativity::LEFT
     }
 }
@@ -187,6 +225,16 @@ fn factorial(n: CalcNumber) -> CalcNumber {
     if n.0 == 0 || n.0 == 1 { return res; }
     for i in 1..n.0+1 { res *= i; }
     return res;
+}
+
+fn to_bool(n: CalcNumber) -> bool {
+    if n.0 > 0 { return true; }
+    return false;
+}
+
+fn to_calc_num(b: bool) -> CalcNumber {
+    if b { return Wrapping(1); }
+    return Wrapping(0);
 }
 
 fn lexer(input: String) -> Result<Vec<TOKEN>, String> {
@@ -199,13 +247,76 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, String> {
             match nc {
                 '+' => tokens.push(TOKEN::PLUS(i)),
                 '-' => tokens.push(TOKEN::MINUS(i)),
-                '*' => tokens.push(TOKEN::MUL(i)),
+                '*' => {
+                    if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '*' {
+                        i+=1;
+                        tokens.push(TOKEN::POW(i));
+                    }else{
+                        tokens.push(TOKEN::MUL(i));
+                    }
+                },
                 '(' => tokens.push(TOKEN::LPAREN(i)),
                 ')' => tokens.push(TOKEN::RPAREN(i)),
                 '/' => tokens.push(TOKEN::DIV(i)),
-                '^' => tokens.push(TOKEN::POW(i)),
                 '!' => tokens.push(TOKEN::FACT(i)),
                 's' => tokens.push(TOKEN::SQRT(i)),
+                '|' => {
+                    if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '|' {
+                        i+=1;
+                        tokens.push(TOKEN::OR(i));
+                    }else{
+                        tokens.push(TOKEN::BOR(i));
+                    }
+                },
+                '&' => {
+                    if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '&' {
+                        i+=1;
+                        tokens.push(TOKEN::AND(i));
+                    }else{
+                        tokens.push(TOKEN::BAND(i));
+                    }
+                },
+                '^' => {
+                    if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '^' {
+                        i+=1;
+                        tokens.push(TOKEN::XOR(i));
+                    }else{
+                        tokens.push(TOKEN::BXOR(i));
+                    }
+                },
+                '%' => tokens.push(TOKEN::MOD(i)),
+                '=' => {
+                    if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '=' {
+                        i+=1;
+                        tokens.push(TOKEN::EQUAL(i));
+                    }else{
+                        return Err(format!("{}: {}", nc, ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); 
+                    }
+                },
+                'n' => {
+                    if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '=' {
+                        i+=1;
+                        tokens.push(TOKEN::NEQUAL(i));
+                    }else{
+                        tokens.push(TOKEN::NOT(i));
+                    }
+                },
+                '>' => {
+                    if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '=' {
+                        i+=1;
+                        tokens.push(TOKEN::GE(i));
+                    }else{
+                        tokens.push(TOKEN::GT(i));
+                    }
+                },
+                '<' => {
+                    if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '=' {
+                        i+=1;
+                        tokens.push(TOKEN::LE(i));
+                    }else{
+                        tokens.push(TOKEN::LT(i));
+                    }
+                },
                 _ => {
                     if nc.is_digit(10) {
                         let mut number:String = String::new();
@@ -253,7 +364,18 @@ fn shunting_yard_algorithm(tokens: Vec<TOKEN>) -> VecDeque<TOKEN> {
 
     for token in tokens {
         match token {
-            TOKEN::PLUS(_) | TOKEN::MINUS(_) | TOKEN::MUL(_) | TOKEN::DIV(_) | TOKEN::POW(_) | TOKEN::FACT(_) | TOKEN::SQRT(_) => {
+            TOKEN::LPAREN(_) => operators.push(token),
+            TOKEN::RPAREN(_) => {
+                while let Some(op) = operators.last() {
+                    if let TOKEN::LPAREN(_) = *op { 
+                        operators.pop();
+                        break;
+                    }
+                    output.push_back(operators.pop().unwrap());
+                }
+            },
+            TOKEN::NUMBER(_, _) => output.push_back(token),
+            _ => {
                 while let Some(op) = operators.last() {
                     let o1 = token.clone();
                     let o2 = op.clone();
@@ -268,18 +390,7 @@ fn shunting_yard_algorithm(tokens: Vec<TOKEN>) -> VecDeque<TOKEN> {
                     }
                 }
                 operators.push(token);
-            },
-            TOKEN::LPAREN(_) => operators.push(token),
-            TOKEN::RPAREN(_) => {
-                while let Some(op) = operators.last() {
-                    if let TOKEN::LPAREN(_) = *op { 
-                        operators.pop();
-                        break;
-                    }
-                    output.push_back(operators.pop().unwrap());
-                }
-            },
-            TOKEN::NUMBER(_, _) => output.push_back(token)
+            }
         }
     }
 
@@ -297,7 +408,15 @@ fn generate_ast(tokens: VecDeque<TOKEN>) -> Result<ASTNode, ErrorCode> {
     for token in tokens {
         match token {
             // Binary op
-            TOKEN::PLUS(char_idx) | TOKEN::MINUS(char_idx) | TOKEN::MUL(char_idx) | TOKEN::DIV(char_idx) | TOKEN::POW(char_idx)=> {
+            TOKEN::PLUS(char_idx) | TOKEN::MINUS(char_idx) |
+            TOKEN::MUL(char_idx) | TOKEN::DIV(char_idx) |
+            TOKEN::POW(char_idx) | TOKEN::OR(char_idx) |
+            TOKEN::BOR(char_idx) | TOKEN::AND(char_idx) | 
+            TOKEN::BAND(char_idx) | TOKEN::XOR(char_idx) |
+            TOKEN::BXOR(char_idx) | TOKEN::MOD(char_idx) | 
+            TOKEN::EQUAL(char_idx) | TOKEN::NEQUAL(char_idx) |
+            TOKEN::GT(char_idx) | TOKEN::GE(char_idx) |
+            TOKEN::LT(char_idx) | TOKEN::LE(char_idx) => {
                 let left = Box::new(match stack.pop(){
                     Some(v) => v,
                     None => { return Err((ARG_MISS_ERROR, Some(char_idx))); }
@@ -316,7 +435,7 @@ fn generate_ast(tokens: VecDeque<TOKEN>) -> Result<ASTNode, ErrorCode> {
                 };
             },
             // right unary op
-            TOKEN::SQRT(char_idx) => {
+            TOKEN::SQRT(char_idx) | TOKEN::NOT(char_idx) => {
                 match stack.pop() {
                     Some(v) => { stack.push(ASTNode::UROperator { op: token, right: Box::new(v) }) },
                     None => { return Err((ARG_MISS_ERROR, Some(char_idx))); }
