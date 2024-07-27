@@ -58,7 +58,6 @@ The expression evaluation is follows the following precedence<br>
 | Bitwise AND | `&` |
 | Logical XOR | `^^` |
 | Bitwise XOR | `^` |
-| Logical AND | `&&` |
 | Greater Than | `>` |
 | Greater Equal | `>=` |
 | Less Than | `<` |

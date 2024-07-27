@@ -15,8 +15,30 @@ enum COMMAND {
 fn print_help(){
     println!("========= HELP =========");
     println!("commands: \x1b[1;36m(quit, q)\x1b[0m");
+    println!("{:widthN$}|{:width$}", " Name", " Command", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Add", "  +", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Sub", "  -", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Mul", "  *", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Div", "  /", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Exp", "  **", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Factorial", "  !", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Square root", "  s", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Mod", "  %", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Equals", "  ==", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Not", "  n", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Not Equal", "  n=", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Logic OR", "  ||", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Bit OR", "  |", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Logic AND", "  &&", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Bit AND", "  &", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Logic XOR", "  ^^", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Bit XOR", "  ^", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Greater Than", "  >", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Greater Equal", "  >=", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Less Than", "  <", widthN=15, width=5);
+    println!("{:widthN$}|{:width$}", " Less Equal", "  <=", widthN=15, width=5);
     println!("evaluation:");
-    println!("\x1b[1;36m\t(ss160 000*3+4)/8^2!\x1b[0m");
+    println!("\x1b[1;36m\t3*1-3+2 n= s16/2!-(6&3) && s(2**3*50)>=19\x1b[0m");
     println!("\x1b[1;32m\t=> 1\x1b[0m")
 }
 
