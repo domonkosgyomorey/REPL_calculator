@@ -64,8 +64,7 @@ The expression evaluation is follows the following precedence<br>
 | Less Equal | `<=` |
 
 ## 📷 Preview
-![REPL preview](./previews/preview1.png)
-![REPL preview](./previews/preview2.png)
+![REPL preview](./previews/preview_new.png)
 
 ## Building
 Install and switch toolchain to nightly
