@@ -6,7 +6,7 @@ The expression evaluation is follows the following precedence<br>
 
 **The parenthesis is matter!**<br>
 
-**🆕Unary operators added**<br>
+**🆕Booleans and booleans operators added**<br>
 
 **⚠️Working with Nightly toolcahin**<br>
 
@@ -21,6 +21,7 @@ The expression evaluation is follows the following precedence<br>
 
 ## ☀️ Supported Features
 - ✅ unsigned 32 bit integer ( Overflow and Underflow are permitted due Rust Wrapping)
+- ✅ Boolean ( If > 0 Than True otherwise its False )
 - ✅ Addition
 - ✅ Subtraction
 - ✅ Multiplication
@@ -28,7 +29,9 @@ The expression evaluation is follows the following precedence<br>
 - ✅ Exponents
 - ✅ Square root
 - ✅ Factorial
-- ❌ Bool operations
+- ✅ Mod
+- ✅ Logical operators
+- ✅ Equality operators
 - ✅ Nice error handling
 - ✅ Logging ( Log different state of the program during the expression solving into log.txt)
 - ✅ Parentheses matter in the evaluation of the expression
@@ -42,9 +45,24 @@ The expression evaluation is follows the following precedence<br>
 | Subtract | `-` |
 | Multiply | `*` |
 | Divide | `/` |
-| Exponent | `^` |
+| Exponent | `**` |
 | Factorial | `!` |
 | Square root | `s` |
+| Mod | `%` |
+| Equals | `==` |
+| Logical NOT | `n` |
+| Not equal | `n=` |
+| Logical OR | `||` |
+| Bitwise OR | `|` |
+| Logical AND | `&&` |
+| Bitwise AND | `&` |
+| Logical XOR | `^^` |
+| Bitwise XOR | `^` |
+| Logical AND | `&&` |
+| Greater Than | `>` |
+| Greater Equal | `>=` |
+| Less Than | `<` |
+| Less Equal | `<=` |
 
 ## 📷 Preview
 ![REPL preview](./previews/preview1.png)
