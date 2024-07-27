@@ -39,29 +39,29 @@ The expression evaluation is follows the following precedence<br>
 - ✅ Automatic test
 
 ## Operators
-| Name | Operator |
-| - | :-: |
-| Addition | `+` |
-| Subtract | `-` |
-| Multiply | `*` |
-| Divide | `/` |
-| Exponent | `**` |
-| Factorial | `!` |
-| Square root | `s` |
-| Mod | `%` |
-| Equals | `==` |
-| Logical NOT | `n` |
-| Not equal | `n=` |
-| Logical OR | `\|\|` |
-| Bitwise OR | `\|` |
-| Logical AND | `&&` |
-| Bitwise AND | `&` |
-| Logical XOR | `^^` |
-| Bitwise XOR | `^` |
-| Greater Than | `>` |
-| Greater Equal | `>=` |
-| Less Than | `<` |
-| Less Equal | `<=` |
+| Name | Operator | Arg number | Return type |
+| :- | :-: | :-: | :- |
+| Addition | `+` | 2 | u32 |
+| Subtract | `-` | 2 | u32 |
+| Multiply | `*` | 2 | u32 |
+| Divide | `/` | 2 | u32 |
+| Exponent | `**` | 2 | u32 |
+| Factorial | `!` | 1 | u32 |
+| Square root | `s` | 1 | u32 |
+| Mod | `%` | 2 | u32 |
+| Equals | `==` | 2 | bool |
+| Logical NOT | `n` | 1 | bool |
+| Not equal | `n=` | 2 | bool |
+| Logical OR | `\|\|` | 2 | bool |
+| Bitwise OR | `\|` | 2 | bool |
+| Logical AND | `&&` | 2 | bool |
+| Bitwise AND | `&` | 2 | bool |
+| Logical XOR | `^^` | 2 | bool |
+| Bitwise XOR | `^` | 2 | bool |
+| Greater Than | `>` | 2 | bool |
+| Greater Equal | `>=` | 2 | bool |
+| Less Than | `<` | 2 | bool |
+| Less Equal | `<=` | 2 | bool |
 
 ## 📷 Preview
 ![REPL preview](./previews/preview_new.png)
