@@ -117,7 +117,7 @@ fn pow_test_4(){
 
 #[test]
 fn fact_test_1(){
-    assert_eq!(3, calc::eval("3!".to_string()).unwrap().0);
+    assert_eq!(6, calc::eval("3!".to_string()).unwrap().0);
 }
 
 #[test]

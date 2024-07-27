@@ -6,7 +6,7 @@ The expression evaluation is follows the following precedence<br>
 
 **The parenthesis is matter!**<br>
 
-**🆕Unary operators added**
+**🆕Unary operators added**<br>
 
 **⚠️Working with Nightly toolcahin**<br>
 
@@ -35,7 +35,15 @@ The expression evaluation is follows the following precedence<br>
 ![REPL preview](./previews/preview1.png)
 ![REPL preview](./previews/preview2.png)
 
-## Build 'N Run
+## Building
+Install and switch toolchain to nightly
+```console
+rustup toolchain install nightly
+rustup default nightly
+
+```
+
+Build and run
 ```console
 cargo build
 cargo run
