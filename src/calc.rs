@@ -17,6 +17,8 @@ enum TOKEN {
     MUL(usize),
     DIV(usize),
     POW(usize),
+    FACT(usize),
+    SQRT(usize),
     LPAREN(usize),
     RPAREN(usize),
     NUMBER(CalcNumber, usize),
@@ -25,7 +27,9 @@ enum TOKEN {
 #[derive(Debug, Clone)]
 enum ASTNode {
     Number(CalcNumber),
-    Operator { op: TOKEN, left: Box<ASTNode>, right: Box<ASTNode>}
+    ULOperator { op: TOKEN, left: Box<ASTNode>},
+    UROperator { op: TOKEN, right: Box<ASTNode>},
+    BOperator { op: TOKEN, left: Box<ASTNode>, right: Box<ASTNode>}
 }
 
 #[derive(PartialEq)]
@@ -39,7 +43,7 @@ impl ASTNode {
     fn eval(&self) -> Result<CalcNumber, ErrorCode> {
         match self {
             ASTNode::Number(val) => Ok(*val),
-            ASTNode::Operator { op, left, right } => {
+            ASTNode::BOperator { op, left, right } => {
                 let (maybe_left_val, maybe_right_val): (Result<CalcNumber, ErrorCode>, Result<CalcNumber, ErrorCode>) = rayon::join(|| left.eval(), || right.eval());
                 let lval = match maybe_left_val {
                     Err(err_code) => { return Err(err_code); },
@@ -59,6 +63,28 @@ impl ASTNode {
                     },
                     TOKEN::POW(_) => Ok(Wrapping(lval.0.wrapping_pow(rval.0))),
                     _ => unreachable!(),
+                }
+            },
+            ASTNode::ULOperator { op, left } => {
+                let meybe_left: Result<CalcNumber, ErrorCode> = left.eval();
+                let lval = match meybe_left {
+                    Err(err_code) => { return Err(err_code); },
+                    Ok(v) => v
+                };
+                match op {
+                    TOKEN::FACT(_) => Ok(factorial(lval)),
+                    _ => unreachable!(),
+                }
+            },
+            ASTNode::UROperator { op, right } => {
+                let maybe_right_val:Result<CalcNumber, ErrorCode> = right.eval();
+                let rval = match maybe_right_val {
+                    Err(err_code) => { return Err(err_code); },
+                    Ok(v) => v
+                };
+                match op {
+                    TOKEN::SQRT(_) => Ok(Wrapping(f64::from(rval.0).sqrt() as u32)),
+                    _ => unreachable!()
                 }
             }
         }
@@ -139,7 +165,8 @@ pub fn eval(input: String) -> Result<CalcNumber, ErrorMsg>{
 
 fn op_precedence(token: TOKEN) -> u32 {
     match token {
-        TOKEN::POW(_) => 3,
+        TOKEN::FACT(_) => 4,
+        TOKEN::POW(_) | TOKEN::SQRT(_) => 3,
         TOKEN::DIV(_) | TOKEN::MUL(_) => 2,
         TOKEN::PLUS(_) | TOKEN::MINUS(_) => 1,
         TOKEN::LPAREN(_) | TOKEN::RPAREN(_) | TOKEN::NUMBER(_, _) => 0
@@ -150,9 +177,16 @@ fn op_associative(token: TOKEN) -> Associativity {
     match token {
         TOKEN::LPAREN(_) | TOKEN::RPAREN(_) => Associativity::NOT,
         TOKEN::NUMBER(_, _) => unreachable!(),
-        TOKEN::POW(_) => Associativity::RIGHT,
+        TOKEN::POW(_) | TOKEN::SQRT(_) => Associativity::RIGHT,
         _ => Associativity::LEFT
     }
+}
+
+fn factorial(n: CalcNumber) -> CalcNumber {
+    let mut res = Wrapping(1);
+    if n.0 == 0 || n.0 == 1 { return res; }
+    for i in 1..n.0+1 { res *= i; }
+    return res;
 }
 
 fn lexer(input: String) -> Result<Vec<TOKEN>, String> {
@@ -170,6 +204,8 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, String> {
                 ')' => tokens.push(TOKEN::RPAREN(i)),
                 '/' => tokens.push(TOKEN::DIV(i)),
                 '^' => tokens.push(TOKEN::POW(i)),
+                '!' => tokens.push(TOKEN::FACT(i)),
+                's' => tokens.push(TOKEN::SQRT(i)),
                 _ => {
                     if nc.is_digit(10) {
                         let mut number:String = String::new();
@@ -217,7 +253,7 @@ fn shunting_yard_algorithm(tokens: Vec<TOKEN>) -> VecDeque<TOKEN> {
 
     for token in tokens {
         match token {
-            TOKEN::PLUS(_) | TOKEN::MINUS(_) | TOKEN::MUL(_) | TOKEN::DIV(_) | TOKEN::POW(_) => {
+            TOKEN::PLUS(_) | TOKEN::MINUS(_) | TOKEN::MUL(_) | TOKEN::DIV(_) | TOKEN::POW(_) | TOKEN::FACT(_) | TOKEN::SQRT(_) => {
                 while let Some(op) = operators.last() {
                     let o1 = token.clone();
                     let o2 = op.clone();
@@ -260,6 +296,7 @@ fn generate_ast(tokens: VecDeque<TOKEN>) -> Result<ASTNode, ErrorCode> {
 
     for token in tokens {
         match token {
+            // Binary op
             TOKEN::PLUS(char_idx) | TOKEN::MINUS(char_idx) | TOKEN::MUL(char_idx) | TOKEN::DIV(char_idx) | TOKEN::POW(char_idx)=> {
                 let left = Box::new(match stack.pop(){
                     Some(v) => v,
@@ -269,8 +306,22 @@ fn generate_ast(tokens: VecDeque<TOKEN>) -> Result<ASTNode, ErrorCode> {
                     Some(v) => v,
                     None => { return Err((ARG_MISS_ERROR, Some(char_idx))); }
                 });
-                stack.push(ASTNode::Operator { op: token, left: right, right: left })
+                stack.push(ASTNode::BOperator { op: token, left: right, right: left })
             },
+            // left unary op
+            TOKEN::FACT(char_idx) => {
+                match stack.pop(){
+                    Some(v) =>  stack.push(ASTNode::ULOperator { op: token, left: Box::new(v) }),
+                    None => { return Err((ARG_MISS_ERROR, Some(char_idx))); }
+                };
+            },
+            // right unary op
+            TOKEN::SQRT(char_idx) => {
+                match stack.pop() {
+                    Some(v) => { stack.push(ASTNode::UROperator { op: token, right: Box::new(v) }) },
+                    None => { return Err((ARG_MISS_ERROR, Some(char_idx))); }
+                };
+            }
             TOKEN::NUMBER(num, _) => {
                 stack.push(ASTNode::Number(num));
             },

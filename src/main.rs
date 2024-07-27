@@ -16,8 +16,8 @@ fn print_help(){
     println!("========= HELP =========");
     println!("commands: \x1b[1;36m(quit, q)\x1b[0m");
     println!("evaluation:");
-    println!("\x1b[1;36m\t((1)+11-3)\x1b[0m");
-    println!("\x1b[1;32m\t=> 9\x1b[0m")
+    println!("\x1b[1;36m\t(ss160 000*3+4)/8^2!\x1b[0m");
+    println!("\x1b[1;32m\t=> 1\x1b[0m")
 }
 
 fn get_line() -> String {

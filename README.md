@@ -2,11 +2,13 @@
 **A calculator [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) written in Rust mainly for learning reason**<br>
 
 The expression evaluation is follows the following precedence<br>
-**( MUL , DIV ) > ( ADD , SUB )**<br>
+**( SQRT , EXP ) > ( MUL , DIV ) > ( ADD , SUB )**<br>
 
 **The parenthesis is matter!**<br>
 
-**Working with Nightly toolcahin**<br>
+**🆕Unary operators added**
+
+**⚠️Working with Nightly toolcahin**<br>
 
 ## Expression Solving recipe
 - Own "Input cleaner", "Tokenizer", "Lexer"<br>
@@ -20,6 +22,8 @@ The expression evaluation is follows the following precedence<br>
 - ✅ Multiplication
 - ✅ Division (On Divided by Zero print Error)
 - ✅ Exponents
+- ✅ Square root
+- ✅ Factorial
 - ❌ Bool operations
 - ✅ Nice error handling
 - ✅ Logging ( Log different state of the program during the expression solving into log.txt)
@@ -29,6 +33,7 @@ The expression evaluation is follows the following precedence<br>
 
 ## Preview
 ![REPL preview](./previews/preview1.png)
+![REPL preview](./previews/preview2.png)
 
 ## Build 'N Run
 ```console

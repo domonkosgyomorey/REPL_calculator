@@ -116,6 +116,46 @@ fn pow_test_4(){
 }
 
 #[test]
+fn fact_test_1(){
+    assert_eq!(3, calc::eval("3!".to_string()).unwrap().0);
+}
+
+#[test]
+fn fact_test_2(){
+    assert_eq!(1, calc::eval("0!".to_string()).unwrap().0);
+}
+
+#[test]
+fn fact_test_3(){
+    assert_eq!(3628800, calc::eval("10!".to_string()).unwrap().0);
+}
+
+#[test]
+fn fact_test_4(){
+    assert_eq!(720, calc::eval("3!!".to_string()).unwrap().0);
+}
+
+#[test]
+fn sqrt_test_1(){
+    assert_eq!(3, calc::eval("s9".to_string()).unwrap().0);
+}
+
+#[test]
+fn sqrt_test_2(){
+    assert_eq!(0, calc::eval("s0".to_string()).unwrap().0);
+}
+
+#[test]
+fn sqrt_test_3(){
+    assert_eq!(20, calc::eval("s400".to_string()).unwrap().0);
+}
+
+#[test]
+fn sqrt_test_4(){
+    assert_eq!(23, calc::eval("ss279841".to_string()).unwrap().0);
+}
+
+#[test]
 fn precedence_test(){
     assert_eq!(16, calc::eval("5*3+10-18/2".to_string()).unwrap().0);
 }
@@ -143,6 +183,11 @@ fn expr_test_1(){
 #[test]
 fn expr_test_2(){
     assert_eq!(164531, calc::eval("(1+2+3+4+5)^4*13/4".to_string()).unwrap().0);
+}
+
+#[test]
+fn expr_test_3(){
+    assert_eq!(1, calc::eval("(ss160 000*3+4)/8^2!".to_string()).unwrap().0);
 }
 
 #[test]
