@@ -1,4 +1,4 @@
-# Description
+# 📖 Description
 **A calculator [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) written in Rust mainly for learning reason**<br>
 
 The expression evaluation is follows the following precedence<br>
@@ -10,12 +10,16 @@ The expression evaluation is follows the following precedence<br>
 
 **⚠️Working with Nightly toolcahin**<br>
 
+## ⬇️ Installation
+[0.1 "Iterative" version](https://github.com/domonkosgyomorey/REPL_calculator/releases/tag/0.1)<br>
+[0.2 Expression Tree version](https://github.com/domonkosgyomorey/REPL_calculator/releases/tag/0.2)
+
 ## Expression Solving recipe
 - Own "Input cleaner", "Tokenizer", "Lexer"<br>
 - [Shunting Yard algorithm](https://en.wikipedia.org/wiki/Shunting_yard_algorithm) for converting expression into infix form<br>
 - Generating [Expression Tree](https://en.wikipedia.org/wiki/Binary_expression_tree) from infix expression form<br>
 
-## Supported Features
+## ☀️ Supported Features
 - ✅ unsigned 32 bit integer ( Overflow and Underflow are permitted due Rust Wrapping)
 - ✅ Addition
 - ✅ Subtraction
@@ -42,7 +46,7 @@ The expression evaluation is follows the following precedence<br>
 | Factorial | `!` |
 | Square root | `s` |
 
-## Preview
+## 📷 Preview
 ![REPL preview](./previews/preview1.png)
 ![REPL preview](./previews/preview2.png)
 
@@ -60,10 +64,10 @@ cargo build
 cargo run
 ```
 
-## Dependencies
+## 📦 Dependencies
 - [lazy_static](https://crates.io/crates/lazy_static)
 - [rayon](https://crates.io/crates/rayon)
 - rustup and nightly toolchain
 
-## Tested On
-Windows
+## 🧪 Tested On
+x86_64 Windows
