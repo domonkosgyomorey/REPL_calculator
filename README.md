@@ -52,8 +52,8 @@ The expression evaluation is follows the following precedence<br>
 | Equals | `==` |
 | Logical NOT | `n` |
 | Not equal | `n=` |
-| Logical OR | `||` |
-| Bitwise OR | `|` |
+| Logical OR | `\|\|` |
+| Bitwise OR | `\|` |
 | Logical AND | `&&` |
 | Bitwise AND | `&` |
 | Logical XOR | `^^` |
