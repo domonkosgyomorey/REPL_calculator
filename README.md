@@ -31,6 +31,17 @@ The expression evaluation is follows the following precedence<br>
 - ✅ A handy REPL
 - ✅ Automatic test
 
+## Operators
+| Name | Operator |
+| - | :-: |
+| Addition | `+` |
+| Subtract | `-` |
+| Multiply | `*` |
+| Divide | `/` |
+| Exponent | `^` |
+| Factorial | `!` |
+| Square root | `s` |
+
 ## Preview
 ![REPL preview](./previews/preview1.png)
 ![REPL preview](./previews/preview2.png)
