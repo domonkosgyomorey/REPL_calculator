@@ -1,5 +1,5 @@
 # 📖 Description
-**A calculator [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) written in Rust mainly for learning reason**<br>
+**A multithreaded calculator [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) written in Rust mainly for learning reason**<br>
 
 **The expression evaluation is follows the following precedence (1 is the highest priority)**<br>
 | Operator | Priority |
@@ -30,6 +30,7 @@
 
 ## ☀️ Supported Features
 - ✅ unsigned 32 bit integer ( Overflow and Underflow are permitted due Rust Wrapping)
+- ✅ Multithreaded AST solver
 - ✅ Boolean ( If > 0 Than True otherwise its False )
 - ✅ Addition
 - ✅ Subtraction
