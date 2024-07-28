@@ -1,8 +1,17 @@
 # 📖 Description
 **A calculator [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) written in Rust mainly for learning reason**<br>
 
-The expression evaluation is follows the following precedence<br>
-**( SQRT , EXP ) > ( MUL , DIV ) > ( ADD , SUB )**<br>
+**The expression evaluation is follows the following precedence (1 is the highest priority)**<br>
+| Operator | Priority |
+| :- | :-: |
+| `Fact` | 1 |
+| `Exp`, `Sqrt` | 2 |
+| `Div`, `Mul`, `Mod` | 3 |
+| `Add`, `Sub` | 4 |
+| `Equal`, `Not`, `Not Equal` | 5 |
+| `Greater Than`, `Less Than`, `Greater Equal`, `Less Equal` | 6 |
+| `Logical And`, `Bitwise And` | 7 |
+| `Logical Or`, `Bitwise Or`, `Logical Xor`, `Bitwise Xor` | 8 |
 
 **The parenthesis is matter!**<br>
 
