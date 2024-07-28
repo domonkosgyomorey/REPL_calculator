@@ -21,7 +21,8 @@
 
 ## ⬇️ Installation
 [0.1 "Iterative" version](https://github.com/domonkosgyomorey/REPL_calculator/releases/tag/0.1)<br>
-[0.2 Expression Tree version](https://github.com/domonkosgyomorey/REPL_calculator/releases/tag/0.2)
+[0.2 Expression Tree version](https://github.com/domonkosgyomorey/REPL_calculator/releases/tag/0.2)<br>
+[0.3 Functional Multithreaded REPL Calculator With Many Operators](https://github.com/domonkosgyomorey/REPL_calculator/releases/tag/0.3)
 
 ## Expression Solving recipe
 - Own "Input cleaner", "Tokenizer", "Lexer"<br>
