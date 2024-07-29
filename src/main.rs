@@ -1,6 +1,7 @@
 use std::io::prelude::*;
-use std::fmt::Debug;
+use colored::*;
 mod calc;
+
 
 #[cfg(test)]
 mod tests;
@@ -9,6 +10,7 @@ enum COMMAND {
     QUIT,
     HELP,
     EMPTY,
+    VARS,
     EVAL
 }
 
@@ -38,8 +40,8 @@ fn print_help(){
     println!("{:widthN$}|{:width$}", " Less Than", "  <", widthN=15, width=5);
     println!("{:widthN$}|{:width$}", " Less Equal", "  <=", widthN=15, width=5);
     println!("evaluation:");
-    println!("\x1b[1;36m\t3*1-3+2 ~= @16/2!-(6&3) && @(2**3*50)>=19\x1b[0m");
-    println!("\x1b[1;32m\t=> 1\x1b[0m")
+    println!("{}", "\t3*1-3+2 ~= @16/2!-(6&3) && @(2**3*50)>=19".green());
+    println!("{}", "\t=> 1".green())
 }
 
 fn get_line() -> String {
@@ -54,20 +56,21 @@ fn get_command(input: &str) -> COMMAND {
     let cmd = input.to_lowercase();
     if cmd=="quit" || cmd=="q" { return COMMAND::QUIT; }
     if cmd=="help" || cmd=="h" { return COMMAND::HELP; }
+    if cmd=="vars" { return COMMAND::VARS; }
     if cmd=="" { return COMMAND::EMPTY; }
     return COMMAND::EVAL;
 }
 
-fn print_error<T: Debug>(msg: T, char_idx: Option<usize>) {
+fn print_error(msg: String, char_idx: Option<usize>) {
     let maybe_char_idx: String = match char_idx {
         Some(ci) => format!(" at {}", ci),
         None => "".to_string(),
     };
-    println!("\x1b[1;31mError: {:?}{}\x1b[0m", msg, maybe_char_idx);
+    println!("{} {}{}", "Error:".red().bold(), msg.red(), maybe_char_idx.red());
 }
 
-fn print_result<T: Debug>(msg: T) {
-    println!("\x1b[1;32m=> {:?}\x1b[0m", msg);
+fn print_result(msg: String) {
+    println!("{} {}", "=>".green(), msg.green().bold());
 }
 
 fn main() -> std::io::Result<()>{
@@ -78,11 +81,12 @@ fn main() -> std::io::Result<()>{
         match get_command(&input) {
             COMMAND::EVAL => {
                 match calc::eval(input) {
-                    Ok(res) => print_result(res),
+                    Ok(res) => print_result(res.to_string()),
                     Err((err, char_idx)) => print_error(err, char_idx)
                 };
             },
             COMMAND::HELP => print_help(),
+            COMMAND::VARS => calc::get_vars().into_iter().for_each(|line| println!("{}", line.blue().bold())),
             COMMAND::EMPTY => { continue; }
             COMMAND::QUIT => { break; }
         }

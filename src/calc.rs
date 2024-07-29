@@ -37,17 +37,17 @@ enum TOKEN {
     BOR(usize),
     BXOR(usize),
 
-    ASSIGN(usize),
-    VAR(usize),
-    
+    EXPR(Box<ASTNode>, usize),
+
     LPAREN(usize),
     RPAREN(usize),
     NUMBER(CalcNumber, usize),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum ASTNode {
     Number(CalcNumber),
+    Expression(Box<ASTNode>),
     ULOperator { op: TOKEN, left: Box<ASTNode>},
     UROperator { op: TOKEN, right: Box<ASTNode>},
     BOperator { op: TOKEN, left: Box<ASTNode>, right: Box<ASTNode>}
@@ -64,6 +64,10 @@ impl ASTNode {
     fn eval(&self) -> Result<CalcNumber, ErrorCode> {
         match self {
             ASTNode::Number(val) => Ok(*val),
+            ASTNode::Expression(sub_root) => match sub_root.eval() {
+                Ok(sub_res) => Ok(sub_res),
+                Err(err_code) => { return Err(err_code); }
+            },
             ASTNode::BOperator { op, left, right } => {
                 let (maybe_left_val, maybe_right_val): (Result<CalcNumber, ErrorCode>, Result<CalcNumber, ErrorCode>) = rayon::join(|| left.eval(), || right.eval());
                 let lval = match maybe_left_val {
@@ -129,20 +133,54 @@ impl ASTNode {
     }
 }
 
-static LOG:Mutex<Vec<String>> = Mutex::new(Vec::new());
-
-fn log_add(s: String) {
-    let mut log = LOG.lock().unwrap();
-    log.push(s);
+lazy_static! {
+    static ref LOG:Mutex<Vec<String>> = Mutex::new(Vec::new());
 }
 
-fn get_log() -> Vec<String> {
-    let log = LOG.lock().unwrap();
-    return log.clone();
+impl LOG {
+    fn add(s: &String) {
+        let mut log = LOG.lock().unwrap();
+        log.push(s.clone());
+    }
+    
+    fn get() -> Vec<String> {
+        let log = LOG.lock().unwrap();
+        return log.clone();
+    }
 }
+
 
 lazy_static! {
-    static ref VARS: Mutex<HashMap<String, CalcNumber>> = Mutex::new(HashMap::new());
+    static ref VARS: Mutex<HashMap<String, (ASTNode, String, Wrapping<u32>)>> = Mutex::new(HashMap::new());
+}
+
+pub fn get_vars() -> Vec<String> {
+    let mut lines:Vec<String> = Vec::new();
+    for (key, (_, expr, result)) in VARS.lock().unwrap().clone().into_iter(){
+        lines.push(String::from(format!("{}: {} => {}", key, expr, result)))
+    }
+    return lines;
+}
+
+impl VARS {
+    fn add(v_name: &String, expr_root: ASTNode, expr: &String, result: Wrapping<u32>) {
+        let mut vars = VARS.lock().unwrap();
+        vars.insert(v_name.clone(), (expr_root, expr.clone(), result));
+    }
+    
+    fn get_expr(v_name: &String) -> Option<ASTNode> {
+        return match VARS.lock().unwrap().get(v_name){
+            Some(v) => Some(v.0.clone()),
+            None => None
+        };
+    }
+
+    fn get_result(v_name: &String) -> Option<Wrapping<u32>> {
+        return match VARS.lock().unwrap().get(v_name){
+            Some(v) => Some(v.2.clone()),
+            None => None
+        };
+    }
 }
 
 const UNKNOWN_TOKEN_ERROR: u32 = 1;
@@ -171,31 +209,68 @@ pub fn write_log(file_path: &'static str) -> Result<(), std::io::Error>{
         .truncate(true)
         .open(file_path)?;
 
-    for line in get_log().iter() {
+    for line in LOG::get().iter() {
         fp.write(line.as_bytes())?;
         fp.write("\n".as_bytes())?;
     }
     Ok(())
 }
 
-pub fn eval(input: String) -> Result<CalcNumber, ErrorMsg>{
-    if !is_parens_correct(input.chars()) { 
+pub fn eval(a: String) -> Result<CalcNumber, ErrorMsg>{
+    let own_input = a.clone();
+    if !is_parens_correct(own_input.chars()) { 
         return Err((ERROR_MAP[&WRON_PAREN_ERROR].to_string(), None));
     }
-    match lexer(input) {
+
+    // Constructing a word for a var if its in the start of the expression
+    let mut variable = String::new();
+    let mut i = 0;
+    if !own_input.is_empty() && own_input.chars().nth(i).unwrap().is_ascii_alphabetic(){
+        variable.push(own_input.chars().nth(i).unwrap());
+        i+=1;
+        while i < own_input.len() && (own_input.chars().nth(i).unwrap().is_ascii_alphabetic() || 
+                own_input.chars().nth(i).unwrap().is_digit(10)) {
+            variable.push(own_input.chars().nth(i).unwrap());
+            i+=1;
+        }
+        while i < own_input.len()  && own_input.chars().nth(i).unwrap().is_whitespace() {
+            i+=1;
+            
+        }
+        if i < own_input.len()  && own_input.char_indices().nth(i).unwrap().1 != '=' {
+            variable.clear();
+        }else{
+            if i >= own_input.len() {
+                if let Some(result) = VARS::get_result(&variable) {
+                    return Ok(result);
+                }
+                return Err((ERROR_MAP[&UNKNOWN_TOKEN_ERROR].to_string(), Some(0)));
+            }
+            i+=1;
+        }
+    }
+
+    let lexer_in = own_input[i..own_input.len()].to_string();
+    // solving the rest of the input
+    match lexer(lexer_in.clone()) {
         Ok(tokens) => {
-            log_add(format!("Tokens {:?}", tokens));
+            LOG::add(&format!("Tokens {:?}", tokens));
             let infixed_tokens = shunting_yard_algorithm(tokens.clone());
-            log_add(format!("Infixed syntax {:?}", infixed_tokens));
+            LOG::add(&format!("Infixed syntax {:?}", infixed_tokens));
             let expression_tree = generate_ast(infixed_tokens);
-            log_add(format!("Expression tree {:?}", expression_tree));
+            LOG::add(&format!("Expression tree {:?}", expression_tree));
             match expression_tree {
-                Ok(res) => {
-                    match res.eval() {
+                Ok(root) => {
+                    match root.eval() {
                         Ok(res) => {
-                            log_add(format!("Output {:?}", res));
-                            log_add("".to_string());
-                            Ok(res)
+                            LOG::add(&format!("Output {}", res));
+                            LOG::add(&"".to_string());
+                            if variable.is_empty() {
+                                return Ok(res);
+                            }else{
+                                VARS::add(&variable, root, &lexer_in, res);
+                                return Ok(res);
+                            }
                         },
                         Err((err_code, err_idx)) => {
                             return Err((ERROR_MAP[&err_code].to_string(), err_idx));
@@ -215,6 +290,7 @@ pub fn eval(input: String) -> Result<CalcNumber, ErrorMsg>{
 
 fn op_precedence(token: TOKEN) -> u32 {
     match token {
+        TOKEN::EXPR(_, _) => 8,
         TOKEN::FACT(_) => 7,
         TOKEN::POW(_) | TOKEN::SQRT(_) => 6,
         TOKEN::DIV(_) | TOKEN::MUL(_) | TOKEN::MOD(_) => 5,
@@ -223,13 +299,13 @@ fn op_precedence(token: TOKEN) -> u32 {
         TOKEN::GT(_) | TOKEN::GE(_) | TOKEN::LT(_) | TOKEN::LE(_) => 3,
         TOKEN::AND(_) | TOKEN::BAND(_) => 2,
         TOKEN::OR(_) | TOKEN::BOR(_) | TOKEN::XOR(_) | TOKEN::BXOR(_) => 1,
-        TOKEN::LPAREN(_) | TOKEN::RPAREN(_) | TOKEN::NUMBER(_, _) | TOKEN::ASSIGN(_) | TOKEN::VAR(_) => 0
+        TOKEN::LPAREN(_) | TOKEN::RPAREN(_) | TOKEN::NUMBER(_, _) => 0
     }
 }
 
 fn op_associative(token: TOKEN) -> Associativity {
     match token {
-        TOKEN::LPAREN(_) | TOKEN::RPAREN(_) | TOKEN::ASSIGN(_) | TOKEN::VAR(_) => Associativity::NOT,
+        TOKEN::LPAREN(_) | TOKEN::RPAREN(_) => Associativity::NOT,
         TOKEN::NUMBER(_, _) => unreachable!(),
         TOKEN::POW(_) | TOKEN::SQRT(_) | TOKEN::NOT(_) => Associativity::RIGHT,
         _ => Associativity::LEFT
@@ -257,80 +333,82 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, String> {
     let mut tokens: Vec<TOKEN> = Vec::new();
     let mut i: usize = 0;
     let mut nc: char;
+    let mut num_of_spaces: usize = 0;
     while i < input.len() {
         nc = input.chars().nth(i).unwrap();
         if nc != ' ' {
+            let og_i = i;
             match nc {
                 '+' => tokens.push(TOKEN::PLUS(i)),
                 '-' => tokens.push(TOKEN::MINUS(i)),
                 '*' => {
                     if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '*' {
                         i+=1;
-                        tokens.push(TOKEN::POW(i));
+                        tokens.push(TOKEN::POW(i-1+num_of_spaces));
                     }else{
-                        tokens.push(TOKEN::MUL(i));
+                        tokens.push(TOKEN::MUL(i+num_of_spaces));
                     }
                 },
-                '(' => tokens.push(TOKEN::LPAREN(i)),
-                ')' => tokens.push(TOKEN::RPAREN(i)),
-                '/' => tokens.push(TOKEN::DIV(i)),
-                '!' => tokens.push(TOKEN::FACT(i)),
-                '@' => tokens.push(TOKEN::SQRT(i)),
+                '(' => tokens.push(TOKEN::LPAREN(i+num_of_spaces)),
+                ')' => tokens.push(TOKEN::RPAREN(i+num_of_spaces)),
+                '/' => tokens.push(TOKEN::DIV(i+num_of_spaces)),
+                '!' => tokens.push(TOKEN::FACT(i+num_of_spaces)),
+                '@' => tokens.push(TOKEN::SQRT(i+num_of_spaces)),
                 '|' => {
                     if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '|' {
                         i+=1;
-                        tokens.push(TOKEN::OR(i));
+                        tokens.push(TOKEN::OR(i-1+num_of_spaces));
                     }else{
-                        tokens.push(TOKEN::BOR(i));
+                        tokens.push(TOKEN::BOR(i+num_of_spaces));
                     }
                 },
                 '&' => {
                     if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '&' {
                         i+=1;
-                        tokens.push(TOKEN::AND(i));
+                        tokens.push(TOKEN::AND(i-1+num_of_spaces));
                     }else{
-                        tokens.push(TOKEN::BAND(i));
+                        tokens.push(TOKEN::BAND(i+num_of_spaces));
                     }
                 },
                 '^' => {
                     if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '^' {
                         i+=1;
-                        tokens.push(TOKEN::XOR(i));
+                        tokens.push(TOKEN::XOR(i-1+num_of_spaces));
                     }else{
-                        tokens.push(TOKEN::BXOR(i));
+                        tokens.push(TOKEN::BXOR(i+num_of_spaces));
                     }
                 },
                 '%' => tokens.push(TOKEN::MOD(i)),
                 '=' => {
                     if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '=' {
                         i+=1;
-                        tokens.push(TOKEN::EQUAL(i));
+                        tokens.push(TOKEN::EQUAL(i-1+num_of_spaces));
                     }else {
-                        tokens.push(TOKEN::ASSIGN(i));
+                        return Err(format!("{}: {}", nc, ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); 
                     }
                 },
                 '~' => {
                     if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '=' {
                         i+=1;
-                        tokens.push(TOKEN::NEQUAL(i));
+                        tokens.push(TOKEN::NEQUAL(i-1+num_of_spaces));
                     }else{
-                        tokens.push(TOKEN::NOT(i));
+                        tokens.push(TOKEN::NOT(i+num_of_spaces));
                     }
                 },
                 '>' => {
                     if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '=' {
                         i+=1;
-                        tokens.push(TOKEN::GE(i));
+                        tokens.push(TOKEN::GE(i-1));
                     }else{
-                        tokens.push(TOKEN::GT(i));
+                        tokens.push(TOKEN::GT(i+num_of_spaces));
                     }
                 },
                 '<' => {
                     if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '=' {
                         i+=1;
-                        tokens.push(TOKEN::LE(i));
+                        tokens.push(TOKEN::LE(i-1+num_of_spaces));
                     }else{
-                        tokens.push(TOKEN::LT(i));
+                        tokens.push(TOKEN::LT(i+num_of_spaces));
                     }
                 },
                 _ => {
@@ -346,12 +424,29 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, String> {
                             }
                             i += 1;
                         }
-                        tokens.push(TOKEN::NUMBER(Wrapping(number.parse().unwrap()), i));
-                    } else { 
+                        tokens.push(TOKEN::NUMBER(Wrapping(number.parse().unwrap()), og_i+num_of_spaces));
+                    } else if nc.is_ascii_alphabetic() {
+                        let mut var: String = String::from(nc);
+                        while i+1<input.len() {
+                            nc = input.chars().nth(i+1).unwrap();
+                            if nc.is_digit(10) || nc.is_ascii_alphabetic() {
+                                var.push(nc);
+                            } else {
+                                break;
+                            }
+                            i += 1;
+                        }
+                        tokens.push(TOKEN::EXPR(match VARS::get_expr(&var) {
+                            Some(expr) => Box::new(expr),
+                            None => { return Err(format!("{}: {}", var.clone(), ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); }
+                        }, og_i));
+                    } else {
                         return Err(format!("{}: {}", nc, ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); 
                     }
                 }
             }
+        }else{
+            num_of_spaces += 1;
         }
         i+=1;
     }
@@ -432,7 +527,7 @@ fn generate_ast(tokens: VecDeque<TOKEN>) -> Result<ASTNode, ErrorCode> {
             TOKEN::BXOR(char_idx) | TOKEN::MOD(char_idx) | 
             TOKEN::EQUAL(char_idx) | TOKEN::NEQUAL(char_idx) |
             TOKEN::GT(char_idx) | TOKEN::GE(char_idx) |
-            TOKEN::LT(char_idx) | TOKEN::LE(char_idx) | TOKEN::ASSIGN(char_idx) => {
+            TOKEN::LT(char_idx) | TOKEN::LE(char_idx) => {
                 let left = Box::new(match stack.pop(){
                     Some(v) => v,
                     None => { return Err((ARG_MISS_ERROR, Some(char_idx))); }
@@ -460,7 +555,9 @@ fn generate_ast(tokens: VecDeque<TOKEN>) -> Result<ASTNode, ErrorCode> {
             TOKEN::NUMBER(num, _) => {
                 stack.push(ASTNode::Number(num));
             },
-            _ => {}
+            TOKEN::EXPR(expr_root, _) => stack.push(ASTNode::Expression(expr_root)),
+            TOKEN::LPAREN(_) => {},
+            TOKEN::RPAREN(_) => {},
         }
     }
     return Ok(match stack.pop(){

@@ -1,21 +1,15 @@
-Tokens [NUMBER(3, 0), MUL(1), NUMBER(1, 2), MINUS(3), NUMBER(3, 4), PLUS(5), NUMBER(2, 7), NEQUAL(9), SQRT(11), NUMBER(16, 13), DIV(14), NUMBER(2, 15), FACT(16), MINUS(17), LPAREN(18), NUMBER(6, 19), BAND(20), NUMBER(3, 21), RPAREN(22), AND(25), SQRT(27), LPAREN(28), NUMBER(2, 29), POW(31), NUMBER(3, 32), MUL(33), NUMBER(50, 35), RPAREN(36), GE(38), NUMBER(19, 40)]
-Infixed syntax [NUMBER(3, 0), NUMBER(1, 2), MUL(1), NUMBER(3, 4), MINUS(3), NUMBER(2, 7), PLUS(5), NUMBER(16, 13), SQRT(11), NUMBER(2, 15), FACT(16), DIV(14), NUMBER(6, 19), NUMBER(3, 21), BAND(20), MINUS(17), NEQUAL(9), NUMBER(2, 29), NUMBER(3, 32), POW(31), NUMBER(50, 35), MUL(33), SQRT(27), NUMBER(19, 40), GE(38), AND(25)]
-Expression tree Ok(BOperator { op: AND(25), left: BOperator { op: NEQUAL(9), left: BOperator { op: PLUS(5), left: BOperator { op: MINUS(3), left: BOperator { op: MUL(1), left: Number(3), right: Number(1) }, right: Number(3) }, right: Number(2) }, right: BOperator { op: MINUS(17), left: BOperator { op: DIV(14), left: UROperator { op: SQRT(11), right: Number(16) }, right: ULOperator { op: FACT(16), left: Number(2) } }, right: BOperator { op: BAND(20), left: Number(6), right: Number(3) } } }, right: BOperator { op: GE(38), left: UROperator { op: SQRT(27), right: BOperator { op: MUL(33), left: BOperator { op: POW(31), left: Number(2), right: Number(3) }, right: Number(50) } }, right: Number(19) } })
-1
+Tokens [NUMBER(1, 2)]
+Infixed syntax [NUMBER(1, 2)]
+Expression tree Ok(Number(1))
+Output 1
 
-Tokens [NUMBER(1, 0), PLUS(1)]
-Infixed syntax [NUMBER(1, 0), PLUS(1)]
-Expression tree Err((9, Some(1)))
-Tokens [NUMBER(2, 0), PLUS(1), NUMBER(101, 6)]
-Infixed syntax [NUMBER(2, 0), NUMBER(101, 6), PLUS(1)]
-Expression tree Ok(BOperator { op: PLUS(1), left: Number(2), right: Number(101) })
-103
+Tokens [LPAREN(2), NUMBER(2, 3), PLUS(3), NUMBER(3, 5), RPAREN(6), MINUS(6), NUMBER(3, 8)]
+Infixed syntax [NUMBER(2, 3), NUMBER(3, 5), PLUS(3), NUMBER(3, 8), MINUS(6)]
+Expression tree Ok(BOperator { op: MINUS(6), left: BOperator { op: PLUS(3), left: Number(2), right: Number(3) }, right: Number(3) })
+Output 2
 
-Tokens [LPAREN(0), LPAREN(1), LPAREN(2), NUMBER(1, 3), RPAREN(4), RPAREN(5), MUL(6), LPAREN(7), LPAREN(8), NUMBER(3, 9), RPAREN(10), RPAREN(11), RPAREN(12), PLUS(13), LPAREN(14), LPAREN(15), NUMBER(1, 16), RPAREN(17), RPAREN(18)]
-Infixed syntax [NUMBER(1, 3), NUMBER(3, 9), MUL(6), NUMBER(1, 16), PLUS(13)]
-Expression tree Ok(BOperator { op: PLUS(13), left: BOperator { op: MUL(6), left: Number(1), right: Number(3) }, right: Number(1) })
-4
+Tokens [NUMBER(1, 2), PLUS(2), EXPR(BOperator { op: MINUS(6), left: BOperator { op: PLUS(3), left: Number(2), right: Number(3) }, right: Number(3) }, 3), MUL(8), NUMBER(2, 9)]
+Infixed syntax [NUMBER(1, 2), EXPR(BOperator { op: MINUS(6), left: BOperator { op: PLUS(3), left: Number(2), right: Number(3) }, right: Number(3) }, 3), NUMBER(2, 9), MUL(8), PLUS(2)]
+Expression tree Ok(BOperator { op: PLUS(2), left: Number(1), right: BOperator { op: MUL(8), left: Expression(BOperator { op: MINUS(6), left: BOperator { op: PLUS(3), left: Number(2), right: Number(3) }, right: Number(3) }), right: Number(2) } })
+Output 5
 
-Tokens [LPAREN(0), RPAREN(1)]
-Infixed syntax []
-Expression tree Err((4, None))

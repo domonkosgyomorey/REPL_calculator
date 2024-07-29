@@ -12,10 +12,11 @@
 | `Greater Than`, `Less Than`, `Greater Equal`, `Less Equal` | 6 |
 | `Logical And`, `Bitwise And` | 7 |
 | `Logical Or`, `Bitwise Or`, `Logical Xor`, `Bitwise Xor` | 8 |
+**The variables inside the expression have the highest priority**
 
 **The parenthesis is matter!**<br>
 
-**🆕Booleans and booleans operators added**<br>
+**🆕Variables Added**<br>
 
 **⚠️Working with Nightly toolcahin**<br>
 
@@ -30,7 +31,8 @@
 - Generating [Expression Tree](https://en.wikipedia.org/wiki/Binary_expression_tree) from infix expression form<br>
 
 ## ☀️ Supported Features
-- ✅ unsigned 32 bit integer ( Overflow and Underflow are permitted due Rust Wrapping)
+- ✅ Variables Added
+- ✅ Unsigned 32 bit integer ( Overflow and Underflow are permitted due Rust Wrapping)
 - ✅ Multithreaded AST solver
 - ✅ Boolean ( If > 0 Than True otherwise its False )
 - ✅ Addition
@@ -75,7 +77,7 @@
 | Less Equal | `<=` | 2 | bool |
 
 ## 📷 Preview
-![REPL preview](./previews/preview_new.png)
+![REPL preview](./previews/preview3.png)
 
 ## Building
 Install and switch toolchain to nightly
