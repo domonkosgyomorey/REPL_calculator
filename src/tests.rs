@@ -557,7 +557,7 @@ fn arg_miss_test_6(){
 
 #[test]
 fn token_parse_err_test_6(){
-    assert_eq!("a: Token cannot be parsed", calc::eval("error".to_string()).unwrap_err().0);
+    assert_eq!("error: Token cannot be parsed", calc::eval("error".to_string()).unwrap_err().0);
 }
 
 #[test]
