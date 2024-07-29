@@ -244,7 +244,7 @@ pub fn eval(a: String) -> Result<CalcNumber, ErrorMsg>{
                 if let Some(result) = VARS::get_result(&variable) {
                     return Ok(result);
                 }
-                return Err((ERROR_MAP[&UNKNOWN_TOKEN_ERROR].to_string(), Some(0)));
+                return Err((format!("{}: {}", variable, ERROR_MAP[&UNKNOWN_TOKEN_ERROR]), Some(0)));
             }
             i+=1;
         }
