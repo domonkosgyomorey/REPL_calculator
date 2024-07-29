@@ -94,6 +94,26 @@ cargo build
 cargo run
 ```
 
+## Install from source
+
+## Pre-requirments
+- [rustup](https://www.rust-lang.org/tools/install) (recommended)
+
+### On Windows
+```console
+git clone https://github.com/domonkosgyomorey/REPL_calculator.git
+cd REPL_calculator
+./build.cmd
+```
+
+### On Linux
+```console
+git clone https://github.com/domonkosgyomorey/REPL_calculator.git
+cd REPL_calculator
+chmod +x ./build.sh
+./build.sh
+```
+
 ## 📦 Dependencies
 - [lazy_static](https://crates.io/crates/lazy_static)
 - [rayon](https://crates.io/crates/rayon)
