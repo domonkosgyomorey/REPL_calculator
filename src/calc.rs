@@ -239,6 +239,7 @@ pub fn eval(a: String) -> Result<CalcNumber, ErrorMsg>{
         }
         if i < own_input.len()  && own_input.char_indices().nth(i).unwrap().1 != '=' {
             variable.clear();
+            i = 0;
         }else{
             if i >= own_input.len() {
                 if let Some(result) = VARS::get_result(&variable) {
