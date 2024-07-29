@@ -12,7 +12,8 @@
 | `Greater Than`, `Less Than`, `Greater Equal`, `Less Equal` | 6 |
 | `Logical And`, `Bitwise And` | 7 |
 | `Logical Or`, `Bitwise Or`, `Logical Xor`, `Bitwise Xor` | 8 |
-**The variables inside the expression have the highest priority**
+
+**⚠️The variables inside the expression have the highest priority**
 
 **The parenthesis is matter!**<br>
 
