@@ -573,24 +573,8 @@ fn token_parse_err_test_8(){
 #[test]
 fn var_test_1(){
     assert_eq!(2, calc::eval("a=(2+3)-3".to_string()).unwrap().0);
-}
-
-#[test]
-fn var_test_2(){
     assert_eq!(5, calc::eval("1+a*2".to_string()).unwrap().0);
-}
-
-#[test]
-fn var_test_3(){
     assert_eq!(18, calc::eval("asd09 = 3*(1+2+3)".to_string()).unwrap().0);
-}
-
-#[test]
-fn var_test_4(){
     assert_eq!(22, calc::eval("a*(a+asd09)-asd09".to_string()).unwrap().0);
-}
-
-#[test]
-fn var_test_5(){
     assert_eq!(3, calc::eval("a=3".to_string()).unwrap().0);
 }
