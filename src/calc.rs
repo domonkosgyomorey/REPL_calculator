@@ -151,19 +151,24 @@ impl LOG {
 
 
 lazy_static! {
-    static ref VARS: Mutex<HashMap<String, (ASTNode, String, Wrapping<u32>)>> = Mutex::new(HashMap::new());
+    // Store Expression Tree, Expression in String, Result
+    // result is an option because the feature function may return not a result but a function
+    static ref VARS: Mutex<HashMap<String, (ASTNode, String, Option<Wrapping<u32>>)>> = Mutex::new(HashMap::new());
 }
 
 pub fn get_vars() -> Vec<String> {
     let mut lines:Vec<String> = Vec::new();
     for (key, (_, expr, result)) in VARS.lock().unwrap().clone().into_iter(){
-        lines.push(String::from(format!("{}: {} => {}", key, expr, result)))
+        lines.push(String::from(format!("{}: {} => {}", key, expr, match result {
+            Some(v) => v.to_string(),
+            None => "Function".to_string()
+        })))
     }
     return lines;
 }
 
 impl VARS {
-    fn add(v_name: &String, expr_root: ASTNode, expr: &String, result: Wrapping<u32>) {
+    fn add(v_name: &String, expr_root: ASTNode, expr: &String, result: Option<Wrapping<u32>>) {
         let mut vars = VARS.lock().unwrap();
         vars.insert(v_name.clone(), (expr_root, expr.clone(), result));
     }
@@ -177,7 +182,7 @@ impl VARS {
 
     fn get_result(v_name: &String) -> Option<Wrapping<u32>> {
         return match VARS.lock().unwrap().get(v_name){
-            Some(v) => Some(v.2.clone()),
+            Some(v) => v.2.clone(),
             None => None
         };
     }
@@ -269,7 +274,7 @@ pub fn eval(a: String) -> Result<CalcNumber, ErrorMsg>{
                             if variable.is_empty() {
                                 return Ok(res);
                             }else{
-                                VARS::add(&variable, root, &lexer_in, res);
+                                VARS::add(&variable, root, &lexer_in, Some(res));
                                 return Ok(res);
                             }
                         },
@@ -437,10 +442,14 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, String> {
                             }
                             i += 1;
                         }
-                        tokens.push(TOKEN::EXPR(match VARS::get_expr(&var) {
-                            Some(expr) => Box::new(expr),
-                            None => { return Err(format!("{}: {}", var.clone(), ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); }
-                        }, og_i));
+                        if let Some(val) = VARS::get_result(&var) {
+                            tokens.push(TOKEN::NUMBER(val, og_i+num_of_spaces));
+                        }else{
+                            tokens.push(TOKEN::EXPR(match VARS::get_expr(&var) {
+                                Some(expr) => Box::new(expr),
+                                None => { return Err(format!("{}: {}", var.clone(), ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); }
+                            }, og_i+num_of_spaces));
+                        }
                     } else {
                         return Err(format!("{}: {}", nc, ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); 
                     }
