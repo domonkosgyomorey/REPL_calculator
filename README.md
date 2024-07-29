@@ -97,6 +97,7 @@ cargo run
 ## 📦 Dependencies
 - [lazy_static](https://crates.io/crates/lazy_static)
 - [rayon](https://crates.io/crates/rayon)
+- [colored](https://crates.io/crates/colored) for the REPL
 - rustup and nightly toolchain
 
 ## 🧪 Tested On
