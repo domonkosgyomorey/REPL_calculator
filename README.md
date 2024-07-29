@@ -58,11 +58,11 @@
 | Divide | `/` | 2 | u32 |
 | Exponent | `**` | 2 | u32 |
 | Factorial | `!` | 1 | u32 |
-| Square root | `s` | 1 | u32 |
+| Square root | `@` | 1 | u32 |
 | Mod | `%` | 2 | u32 |
 | Equals | `==` | 2 | bool |
-| Logical NOT | `n` | 1 | bool |
-| Not equal | `n=` | 2 | bool |
+| Logical NOT | `~` | 1 | bool |
+| Not equal | `~=` | 2 | bool |
 | Logical OR | `\|\|` | 2 | bool |
 | Bitwise OR | `\|` | 2 | bool |
 | Logical AND | `&&` | 2 | bool |

@@ -137,22 +137,22 @@ fn fact_test_4(){
 
 #[test]
 fn sqrt_test_1(){
-    assert_eq!(3, calc::eval("s9".to_string()).unwrap().0);
+    assert_eq!(3, calc::eval("@9".to_string()).unwrap().0);
 }
 
 #[test]
 fn sqrt_test_2(){
-    assert_eq!(0, calc::eval("s0".to_string()).unwrap().0);
+    assert_eq!(0, calc::eval("@0".to_string()).unwrap().0);
 }
 
 #[test]
 fn sqrt_test_3(){
-    assert_eq!(20, calc::eval("s400".to_string()).unwrap().0);
+    assert_eq!(20, calc::eval("@400".to_string()).unwrap().0);
 }
 
 #[test]
 fn sqrt_test_4(){
-    assert_eq!(23, calc::eval("ss279841".to_string()).unwrap().0);
+    assert_eq!(23, calc::eval("@@279841".to_string()).unwrap().0);
 }
 
 #[test]
@@ -347,22 +347,22 @@ fn equals_test_4(){
 
 #[test]
 fn not_test_1(){
-    assert_eq!(0, calc::eval("n3".to_string()).unwrap().0);
+    assert_eq!(0, calc::eval("~3".to_string()).unwrap().0);
 }
 
 #[test]
 fn not_test_2(){
-    assert_eq!(1, calc::eval("n0".to_string()).unwrap().0);
+    assert_eq!(1, calc::eval("~0".to_string()).unwrap().0);
 }
 
 #[test]
 fn not_test_3(){
-    assert_eq!(0, calc::eval("n987343".to_string()).unwrap().0);
+    assert_eq!(0, calc::eval("~987343".to_string()).unwrap().0);
 }
 
 #[test]
 fn not_test_4(){
-    assert_eq!(1, calc::eval("nn987343".to_string()).unwrap().0);
+    assert_eq!(1, calc::eval("~~987343".to_string()).unwrap().0);
 }
 
 #[test]
@@ -447,22 +447,22 @@ fn le_test_4(){
 
 #[test]
 fn ne_test_1(){
-    assert_eq!(1, calc::eval("3n=1".to_string()).unwrap().0);
+    assert_eq!(1, calc::eval("3~=1".to_string()).unwrap().0);
 }
 
 #[test]
 fn ne_test_2(){
-    assert_eq!(1, calc::eval("4n=5".to_string()).unwrap().0);
+    assert_eq!(1, calc::eval("4~=5".to_string()).unwrap().0);
 }
 
 #[test]
 fn ne_test_3(){
-    assert_eq!(0, calc::eval("4n=4".to_string()).unwrap().0);
+    assert_eq!(0, calc::eval("4~=4".to_string()).unwrap().0);
 }
 
 #[test]
 fn ne_test_4(){
-    assert_eq!(0, calc::eval("2n=2n=4n=1".to_string()).unwrap().0);
+    assert_eq!(0, calc::eval("2~=2~=4~=1".to_string()).unwrap().0);
 }
 
 #[test]
@@ -497,12 +497,12 @@ fn expr_test_2(){
 
 #[test]
 fn expr_test_3(){
-    assert_eq!(1, calc::eval("(ss160 000*3+4)/8**2!".to_string()).unwrap().0);
+    assert_eq!(1, calc::eval("(@@160 000*3+4)/8**2!".to_string()).unwrap().0);
 }
 
 #[test]
 fn expr_test_4(){
-    assert_eq!(1, calc::eval("3*1-3+2 n= s16/2!-(6&3) && s(2**3*50)>=19".to_string()).unwrap().0);
+    assert_eq!(1, calc::eval("3*1-3+2 ~= @16/2!-(6&3) && @(2**3*50)>=19".to_string()).unwrap().0);
 }
 
 #[test]

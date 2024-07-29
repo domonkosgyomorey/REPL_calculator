@@ -37,6 +37,9 @@ enum TOKEN {
     BOR(usize),
     BXOR(usize),
 
+    ASSIGN(usize),
+    VAR(usize),
+    
     LPAREN(usize),
     RPAREN(usize),
     NUMBER(CalcNumber, usize),
@@ -220,13 +223,13 @@ fn op_precedence(token: TOKEN) -> u32 {
         TOKEN::GT(_) | TOKEN::GE(_) | TOKEN::LT(_) | TOKEN::LE(_) => 3,
         TOKEN::AND(_) | TOKEN::BAND(_) => 2,
         TOKEN::OR(_) | TOKEN::BOR(_) | TOKEN::XOR(_) | TOKEN::BXOR(_) => 1,
-        TOKEN::LPAREN(_) | TOKEN::RPAREN(_) | TOKEN::NUMBER(_, _) => 0
+        TOKEN::LPAREN(_) | TOKEN::RPAREN(_) | TOKEN::NUMBER(_, _) | TOKEN::ASSIGN(_) | TOKEN::VAR(_) => 0
     }
 }
 
 fn op_associative(token: TOKEN) -> Associativity {
     match token {
-        TOKEN::LPAREN(_) | TOKEN::RPAREN(_) => Associativity::NOT,
+        TOKEN::LPAREN(_) | TOKEN::RPAREN(_) | TOKEN::ASSIGN(_) | TOKEN::VAR(_) => Associativity::NOT,
         TOKEN::NUMBER(_, _) => unreachable!(),
         TOKEN::POW(_) | TOKEN::SQRT(_) | TOKEN::NOT(_) => Associativity::RIGHT,
         _ => Associativity::LEFT
@@ -272,7 +275,7 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, String> {
                 ')' => tokens.push(TOKEN::RPAREN(i)),
                 '/' => tokens.push(TOKEN::DIV(i)),
                 '!' => tokens.push(TOKEN::FACT(i)),
-                's' => tokens.push(TOKEN::SQRT(i)),
+                '@' => tokens.push(TOKEN::SQRT(i)),
                 '|' => {
                     if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '|' {
                         i+=1;
@@ -302,11 +305,11 @@ fn lexer(input: String) -> Result<Vec<TOKEN>, String> {
                     if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '=' {
                         i+=1;
                         tokens.push(TOKEN::EQUAL(i));
-                    }else{
-                        return Err(format!("{}: {}", nc, ERROR_MAP[&UNKNOWN_TOKEN_ERROR])); 
+                    }else {
+                        tokens.push(TOKEN::ASSIGN(i));
                     }
                 },
-                'n' => {
+                '~' => {
                     if i+1 < input.len() && input.chars().nth(i+1).unwrap() == '=' {
                         i+=1;
                         tokens.push(TOKEN::NEQUAL(i));
@@ -429,7 +432,7 @@ fn generate_ast(tokens: VecDeque<TOKEN>) -> Result<ASTNode, ErrorCode> {
             TOKEN::BXOR(char_idx) | TOKEN::MOD(char_idx) | 
             TOKEN::EQUAL(char_idx) | TOKEN::NEQUAL(char_idx) |
             TOKEN::GT(char_idx) | TOKEN::GE(char_idx) |
-            TOKEN::LT(char_idx) | TOKEN::LE(char_idx) => {
+            TOKEN::LT(char_idx) | TOKEN::LE(char_idx) | TOKEN::ASSIGN(char_idx) => {
                 let left = Box::new(match stack.pop(){
                     Some(v) => v,
                     None => { return Err((ARG_MISS_ERROR, Some(char_idx))); }
