@@ -96,7 +96,7 @@ cargo run
 
 ## Install from source
 
-## Pre-requirments
+### Pre-requirments
 - [rustup](https://www.rust-lang.org/tools/install) (recommended)
 
 ### On Windows
@@ -113,6 +113,9 @@ cd REPL_calculator
 chmod +x ./build.sh
 ./build.sh
 ```
+
+### Where can I find my executable
+After building the project you will be able to find it in the `./taget/(target_platform)/` folder<br> 
 
 ## 📦 Dependencies
 - [lazy_static](https://crates.io/crates/lazy_static)
