@@ -5,6 +5,7 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::num::Wrapping;
 use std::str::Chars;
+use std::sync::Mutex;
 
 type ErrorMsg = (String, Option<usize>);
 type ErrorCode = (u32, Option<usize>);
@@ -125,7 +126,21 @@ impl ASTNode {
     }
 }
 
-static mut LOG:Vec<String> = Vec::new();
+static LOG:Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+fn log_add(s: String) {
+    let mut log = LOG.lock().unwrap();
+    log.push(s);
+}
+
+fn get_log() -> Vec<String> {
+    let log = LOG.lock().unwrap();
+    return log.clone();
+}
+
+lazy_static! {
+    static ref VARS: Mutex<HashMap<String, CalcNumber>> = Mutex::new(HashMap::new());
+}
 
 const UNKNOWN_TOKEN_ERROR: u32 = 1;
 const WRON_PAREN_ERROR: u32 = 2;
@@ -153,11 +168,9 @@ pub fn write_log(file_path: &'static str) -> Result<(), std::io::Error>{
         .truncate(true)
         .open(file_path)?;
 
-    unsafe {
-        for line in LOG.iter() {
-            fp.write(line.as_bytes())?;
-            fp.write("\n".as_bytes())?;
-        }
+    for line in get_log().iter() {
+        fp.write(line.as_bytes())?;
+        fp.write("\n".as_bytes())?;
     }
     Ok(())
 }
@@ -168,17 +181,17 @@ pub fn eval(input: String) -> Result<CalcNumber, ErrorMsg>{
     }
     match lexer(input) {
         Ok(tokens) => {
-            unsafe { LOG.push(format!("Tokens {:?}", tokens)); }
+            log_add(format!("Tokens {:?}", tokens));
             let infixed_tokens = shunting_yard_algorithm(tokens.clone());
-            unsafe { LOG.push(format!("Infixed syntax {:?}", infixed_tokens)); }
+            log_add(format!("Infixed syntax {:?}", infixed_tokens));
             let expression_tree = generate_ast(infixed_tokens);
-            unsafe { LOG.push(format!("Expression tree {:?}", expression_tree)); }
+            log_add(format!("Expression tree {:?}", expression_tree));
             match expression_tree {
                 Ok(res) => {
                     match res.eval() {
                         Ok(res) => {
-                            unsafe { LOG.push(format!("{:?}", res)); }
-                            unsafe { LOG.push("".to_string()); }
+                            log_add(format!("Output {:?}", res));
+                            log_add("".to_string());
                             Ok(res)
                         },
                         Err((err_code, err_idx)) => {
